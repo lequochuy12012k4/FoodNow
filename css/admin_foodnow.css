@@ -1,0 +1,875 @@
+/* Reset & Basic Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    line-height: 1.6;
+    overflow-x: hidden; /* Prevent horizontal scroll caused by transitions */
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+ul {
+    list-style: none;
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+/* Admin Container Layout */
+.admin-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: 260px;
+    background-color: #2c3e50; /* Dark Blue/Grey */
+    color: #ecf0f1; /* Light Grey */
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100%;
+    left: 0;
+    top: 0;
+    transition: width 0.3s ease, left 0.3s ease; /* Added left transition */
+    z-index: 1001;
+    flex-shrink: 0; /* Prevent sidebar from shrinking */
+}
+
+.sidebar-header {
+    padding: 20px 15px;
+    text-align: center;
+    border-bottom: 1px solid #34495e; /* Slightly lighter dark */
+    flex-shrink: 0;
+}
+
+.logo {
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap; /* Prevent logo text wrap */
+    overflow: hidden;
+}
+
+.sidebar-nav {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden; /* Hide horizontal scrollbar in nav */
+}
+
+.sidebar-nav ul {
+    padding-top: 15px;
+}
+
+.sidebar-nav li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: #bdc3c7; /* Silver */
+    transition: background-color 0.3s ease, color 0.3s ease, padding-left 0.3s ease, border-left-color 0.3s ease;
+    font-size: 0.95em;
+    white-space: nowrap; /* Prevent link text wrap */
+    overflow: hidden;
+}
+
+.sidebar-nav li a i {
+    margin-right: 15px;
+    width: 20px;
+    text-align: center;
+    font-size: 1.1em;
+    transition: margin-right 0.3s ease;
+    flex-shrink: 0; /* Prevent icon shrinking */
+}
+
+.sidebar-nav li a span {
+    opacity: 1;
+    transition: opacity 0.2s ease 0.1s; /* Delay opacity transition slightly */
+}
+
+
+.sidebar-nav li.active a,
+.sidebar-nav li a:hover {
+    background-color: #34495e;
+    color: #fff;
+    border-left: 4px solid #e67e22; /* Orange accent */
+    padding-left: 16px; /* Adjust padding to account for border */
+}
+
+.sidebar-nav li.active a {
+     font-weight: 500; /* Slightly bolder when active */
+}
+
+
+/* Main Content Area Styling */
+.main-content {
+    flex-grow: 1;
+    margin-left: 260px;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.3s ease;
+    width: calc(100% - 260px); /* Ensure content takes remaining width */
+}
+
+/* Main Header Styling */
+.main-header {
+    background-color: #fff;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    flex-shrink: 0; /* Prevent header shrinking */
+}
+
+.header-title {
+    display: flex; /* Use flexbox */
+    align-items: center; /* Vertically align items */
+    gap: 10px; /* Space between icon and text */
+}
+
+.header-title h1 {
+    font-size: 1.6em;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0; /* Reset default margin */
+}
+
+/* Style for the new header toggle button */
+.header-menu-toggle {
+    background: none;
+    border: none;
+    padding: 0; /* Remove padding */
+    margin: 0;
+    font-size: 1.4em; /* Adjust icon size */
+    color: #2c3e50; /* Match title color */
+    cursor: pointer;
+    line-height: 1; /* Ensure proper alignment */
+    display: inline-flex; /* Use inline-flex for alignment */
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+.header-menu-toggle:hover {
+    color: #e67e22; /* Orange hover */
+}
+
+
+.header-user {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.header-user input[type="search"] {
+    padding: 8px 15px;
+    border: 1px solid #ccc;
+    border-radius: 20px 0 0 20px;
+    outline: none;
+    font-size: 0.9em;
+    min-width: 200px;
+    transition: border-color 0.2s ease;
+}
+.header-user input[type="search"]:focus {
+     border-color: #e67e22;
+}
+
+
+.search-btn {
+    padding: 8px 12px;
+    background-color: #e67e22;
+    color: white;
+    border: 1px solid #e67e22;
+    border-left: none;
+    border-radius: 0 20px 20px 0;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    height: 35px; /* Match input height */
+}
+.search-btn:hover {
+    background-color: #d35400; /* Darker Orange */
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    margin-left: 25px;
+    cursor: pointer;
+    position: relative;
+}
+
+.avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    margin-right: 10px;
+    object-fit: cover;
+    border: 2px solid #eee; /* Subtle border */
+}
+
+.user-info span {
+    font-weight: 500;
+    margin-right: 5px;
+    white-space: nowrap;
+}
+
+.user-dropdown {
+    display: none;
+    position: absolute;
+    top: 120%;
+    right: 0;
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 130px;
+    z-index: 1010;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.user-info:hover .user-dropdown {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.user-dropdown a {
+    display: block;
+    padding: 10px 15px;
+    color: #333;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.user-dropdown a:hover {
+    background-color: #f4f7f6;
+}
+
+/* Content Area Styling */
+.content-area {
+    padding: 30px;
+    flex-grow: 1;
+    background-color: #f4f7f6; /* Ensure background color */
+}
+
+/* Dashboard Cards */
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 25px;
+    margin-bottom: 35px;
+}
+
+.card {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+}
+
+.card-icon {
+    font-size: 2.5em;
+    margin-right: 20px;
+    color: #e67e22;
+    width: 50px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.card-info h3 {
+    font-size: 1.8em;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+
+.card-info p {
+    color: #7f8c8d; /* Clouds */
+    font-size: 0.9em;
+}
+
+/* Data Table Styling */
+.data-table-container {
+    background-color: #fff;
+    padding: 25px 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow-x: auto;
+}
+
+.data-table-container h2 {
+    margin-bottom: 20px;
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #2c3e50;
+}
+.data-table-container tbody td img.table-food-image {
+    height: 50px;        /* Chiều cao cố định mong muốn */
+    width: auto;         /* Chiều rộng tự động điều chỉnh */
+    max-width: 80px;     /* Giới hạn chiều rộng tối đa (tùy chọn) */
+    min-width: 50px;     /* Giới hạn chiều rộng tối thiểu (tùy chọn) */
+    border-radius: 4px;  /* Bo góc nhẹ (tùy chọn) */
+    object-fit: cover;   /* Đảm bảo ảnh vừa vặn, cắt bớt nếu cần */
+    display: block;      /* Giúp việc căn chỉnh dễ hơn */
+    margin: 0 auto;      /* Căn giữa ảnh trong ô (tùy chọn) */ /* Căn ảnh theo chiều dọc */
+}
+
+/* Tùy chọn: Làm mờ ảnh nếu món ăn không có sẵn */
+.table-food-image.item-unavailable {
+    opacity: 0.5;
+    filter: grayscale(50%); /* Làm ảnh hơi xám đi */
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 650px; /* Ensure minimum width for table content */
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef; /* Lighter border */
+    vertical-align: middle;
+    white-space: nowrap; /* Prevent cell content wrapping */
+}
+/* Allow wrapping for description or longer text columns if needed */
+/* th:nth-child(X), td:nth-child(X) { white-space: normal; } */
+
+
+th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+td {
+    font-size: 0.95em;
+    color: #495057;
+}
+table thead th:nth-child(6) {
+    text-align: center;
+    vertical-align: middle; /* Đảm bảo căn giữa cả chiều dọc nếu chiều cao header thay đổi */   
+}
+table thead th:nth-child(5) {
+    text-align: center;
+    vertical-align: middle; /* Đảm bảo căn giữa cả chiều dọc nếu chiều cao header thay đổi */
+}
+/* 2. Căn giữa nội dung (ảnh) trong các ô dữ liệu cột thứ 5 */
+table tbody td:nth-child(5) {
+    text-align: center; /* Căn giữa theo chiều ngang (dự phòng) */
+    vertical-align: middle; /* Căn giữa theo chiều dọc */
+    /* Sử dụng Flexbox để căn giữa hoàn hảo */
+    display: flex;
+    justify-content: center; /* Căn giữa theo chiều ngang trong flex container */
+    align-items: center;   /* Căn giữa theo chiều dọc trong flex container */
+}
+
+/* 3. Điều chỉnh style ảnh nếu cần (bỏ margin auto vì đã dùng flex) */
+.data-table-container tbody td:nth-child(5) img.table-food-image {
+    /* margin: 0 auto; */ /* Không còn cần thiết khi dùng flexbox */
+    /* Các thuộc tính khác giữ nguyên */
+    height: 50px;
+    width: auto;
+    max-width: 80px;
+    min-width: 50px;
+    border-radius: 4px;
+    object-fit: cover;
+    display: block;
+    /* vertical-align: middle; /* Cũng ít quan trọng hơn với flexbox */
+}
+
+/* Status Badges */
+.status {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: capitalize;
+    display: inline-block;
+    line-height: 1.2; /* Thêm line-height để căn chỉnh text tốt hơn */
+}
+.status.pending { /* Ví dụ: Hết hàng */
+    background-color: #fff3cd;
+    color: #856404;
+}
+.status.completed { /* Ví dụ: Đang bán */
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status.cancelled { /* Ngừng bán / Đã hủy */
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Button Styling */
+.btn {
+    padding: 7px 10px; /* Slightly adjusted padding */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    vertical-align: middle;
+    margin: 0 2px;
+    line-height: 1.2; /* Prevent button height changing based on icon */
+}
+.btn:active {
+    transform: scale(0.95);
+}
+
+.btn i {
+    font-size: 1em; /* Keep icon size relative */
+    line-height: 1; /* Prevent icon affecting line height */
+}
+
+.btn-view {
+    background-color: #3498db;
+    color: white;
+}
+.btn-view:hover {
+    background-color: #2980b9;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn-edit {
+    background-color: #2980b9; color: white;
+}
+.btn-edit:hover {
+     background-color: #206794;
+}
+.btn-delete {
+     background-color: #c0392b; color: white;
+}
+.btn-delete:hover {
+     background-color: #a93226;
+}
+
+.btn-primary {
+    background-color: #e67e22;
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #d35400;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+.add-button {
+    margin-top: 20px;
+    padding: 10px 18px;
+    font-size: 0.9em;
+}
+
+/* --- Modal Styling --- */
+.modal {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1050;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.modal.active {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    overflow-y: auto; /* Allow scrolling of the modal background if needed */
+    padding: 20px; /* Add padding to prevent content touching edges on small screens */
+}
+
+.modal-overlay {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.65);
+    cursor: pointer;
+    z-index: 1050;
+}
+
+.modal-content {
+    position: relative;
+    background-color: #fff;
+    padding: 30px 40px;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+    z-index: 1051;
+    max-width: 550px;
+    width: 100%; /* Take full width within padding */
+    max-height: calc(100vh - 40px); /* Limit height considering padding */
+    overflow-y: auto; /* Scroll inside the content box */
+    transform: scale(0.95);
+    transition: transform 0.3s ease-in-out;
+}
+
+.modal.active .modal-content {
+    transform: scale(1);
+}
+
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    font-size: 2.2em;
+    font-weight: 300;
+    color: #aaa;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+.modal-close:hover {
+    color: #333;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: #2c3e50;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.5em;
+}
+
+/* Form styling within modal */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.9em;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="file"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.95em;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: #fff;
+    font-family: inherit; /* Ensure form elements inherit body font */
+}
+.form-group select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236c757d%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); /* Grey arrow */
+    background-repeat: no-repeat;
+    background-position: right .75rem center;
+    background-size: .65em auto;
+    padding-right: 2.5rem;
+}
+
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #e67e22;
+    box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.15);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+.form-group input[type="file"] {
+    padding: 8px;
+    background-color: #f8f9fa;
+    line-height: 1.5; /* Adjust line height for file input */
+}
+.form-group input[type="file"]::file-selector-button {
+    padding: 6px 12px;
+    margin-inline-end: 10px; /* Use logical property */
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: #e9ecef;
+    color: #495057;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.form-group input[type="file"]::file-selector-button:hover {
+     background-color: #dee2e6;
+}
+
+
+.modal-submit-btn {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 1em;
+    font-weight: 500;
+    margin-top: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .sidebar {
+        width: 75px;
+    }
+    .sidebar .logo {
+        font-size: 1.2em; /* Smaller logo */
+        /* Consider an icon logo for this size */
+    }
+    .sidebar-nav li a span {
+        opacity: 0;
+        position: absolute;
+        pointer-events: none;
+        visibility: hidden;
+        width: 0; /* Ensure it takes no space */
+    }
+     .sidebar-nav li a {
+        justify-content: center;
+        padding-left: 10px;
+        padding-right: 10px;
+     }
+     .sidebar-nav li a i {
+         margin-right: 0;
+         font-size: 1.3em;
+     }
+     .sidebar-nav li.active a,
+     .sidebar-nav li a:hover {
+        padding-left: 6px; /* Adjust active padding */
+        padding-right: 10px;
+        border-left-width: 4px; /* Ensure border width is consistent */
+     }
+
+    .main-content {
+        margin-left: 75px;
+        width: calc(100% - 75px);
+    }
+     /* Optional: Expand sidebar on hover */
+     /* .sidebar:hover { width: 260px; } */
+     /* .sidebar:hover ~ .main-content { margin-left: 260px; width: calc(100% - 260px);} */
+     /* Styles for expanded hover state need adjustments for text/icons */
+}
+
+@media (max-width: 768px) {
+     .sidebar {
+        left: -260px; /* Hide sidebar off-screen */
+        width: 260px; /* Reset width */
+        transition: left 0.3s ease; /* Only transition left */
+     }
+     .sidebar.open {
+        left: 0; /* Bring sidebar into view */
+        box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+     }
+
+     .main-content {
+         margin-left: 0; /* Content takes full width */
+         width: 100%;
+         transition: margin-left 0.3s ease; /* Reset transition */
+     }
+     /* Optionally push content when sidebar is open on mobile */
+     /* .sidebar.open ~ .main-content { margin-left: 260px; width: calc(100% - 260px); } */
+
+
+     .main-header {
+         padding: 15px;
+     }
+     .header-title h1 {
+         font-size: 1.3em;
+     }
+      /* Show mobile toggle button created by JS */
+     .mobile-menu-toggle {
+        display: inline-flex !important; /* Ensure JS button is visible */
+     }
+     /* Hide the new header toggle button on mobile if the JS one is preferred */
+     /* .header-menu-toggle { display: none; } */
+
+
+     .header-user input[type="search"] {
+         min-width: 120px;
+         font-size: 0.85em;
+     }
+     .user-info span {
+         display: none;
+     }
+     .avatar {
+         margin-right: 0;
+     }
+
+     .dashboard-cards {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    .card {
+        padding: 20px;
+    }
+
+    .content-area {
+        padding: 20px;
+    }
+    .data-table-container {
+        padding: 20px 15px; /* Less horizontal padding */
+    }
+    table {
+        min-width: 500px; /* Adjust min-width for smaller screens */
+    }
+    th, td {
+        padding: 10px 8px; /* Reduce padding in cells */
+        font-size: 0.9em; /* Slightly smaller text in table */
+    }
+
+
+}
+
+@media (max-width: 576px) {
+     .dashboard-cards {
+        grid-template-columns: 1fr;
+     }
+     .header-user {
+         gap: 10px;
+     }
+     /* Option: Simplify header further */
+      /* .header-user input[type="search"], .search-btn { display: none; } */
+      .header-user input[type="search"] { min-width: 100px; }
+      .main-header { padding: 10px 15px; }
+      .header-title h1 { font-size: 1.2em; }
+
+
+      .modal-content {
+        padding: 25px 20px; /* Adjust modal padding */
+        max-height: calc(100vh - 20px); /* Adjust max height */
+      }
+      .modal-content h2 {
+          font-size: 1.3em;
+          margin-bottom: 20px;
+      }
+      .form-group { margin-bottom: 15px;}
+
+       th, td {
+           font-size: 0.85em;
+           white-space: normal; /* Allow wrapping on very small screens */
+       }
+       .btn {
+           padding: 5px 8px;
+           font-size: 0.8em;
+       }
+       .add-button { padding: 8px 15px;}
+
+}
+
+/* Style for mobile menu toggle button created by JS */
+.mobile-menu-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 1.5em;
+    color: #2c3e50;
+    cursor: pointer;
+    line-height: 1;
+    display: none; /* Hidden by default, shown via media query */
+    align-items: center;
+    justify-content: center;
+}
+@media (max-width: 768px) {
+    .sidebar {
+       left: -260px; /* <-- Mặc định ẩn sidebar sang trái */
+       width: 260px;
+       transition: left 0.3s ease; /* <-- Hiệu ứng trượt */
+    }
+    .sidebar.open {
+       left: 0; /* <-- Khi có class 'open', sidebar trượt vào vị trí 0 */
+       box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+    }
+
+    .main-content {
+        margin-left: 0; /* <-- Nội dung chiếm toàn bộ khi sidebar ẩn */
+        width: 100%;
+    }
+    /* Bạn có thể bỏ comment dòng dưới nếu muốn nội dung bị đẩy sang khi sidebar hiện */
+    /* .sidebar.open ~ .main-content { margin-left: 260px; width: calc(100% - 260px); } */
+
+    /* Các quy tắc khác cho mobile... */
+
+    /* Hiển thị nút toggle được tạo bởi JS */
+    .mobile-menu-toggle {
+       display: inline-flex !important;
+    }
+    /* Ẩn nút toggle tĩnh trong header (nếu bạn chỉ muốn dùng 1 nút trên mobile) */
+    .header-menu-toggle {
+        display: none;
+    }
+}
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    }
+        /* If there are too many css and to read better make a .css file and link!
+	That will make a way to easier. (And easier for the memory */
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    }
+ .alert-danger {
+       color: #721c24;
+     background-color: #f8d7da;
+    border-color: #f5c6cb;
+        }
+
+   .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    padding: 20px;
+}

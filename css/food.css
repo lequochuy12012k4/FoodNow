@@ -1,0 +1,1431 @@
+
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap'); /* Example Font */
+
+:root {
+    --primary-color: #ffc107; /* Example Yellow/Orange Accent */
+    --text-light: #f8f9fa;
+    --text-dark: #343a40;
+    --bg-dark: #212529;
+    --bg-carousel: #3e444a; /* Example darker overlay color */
+    --bg-food-section: #1a1a1a; /* Background for food section */
+    --bg-food-item: #282828; /* Background for food items */
+}
+
+
+body{
+    margin: 0;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+}
+a{
+    text-decoration: none;
+    color: var(--text-light);
+    transition: color 0.3s ease;
+}
+a:hover {
+    color: var(--primary-color);
+}
+
+/* --- Header Styling (Similar to Target) --- */
+header{
+    width: 100%; /* Full width */
+    max-width: 1400px; /* Max width */
+    margin: 0 auto; /* Center */
+    height: 80px; /* Adjust height */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: absolute; /* Position over carousel */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 150; /* High z-index */
+    padding: 0 40px; /* Horizontal padding */
+    box-sizing: border-box;
+}
+header .logo {
+    font-size: 1.4em;
+    font-weight: 700;
+    letter-spacing: 1px;
+    /* Add actual logo image if available */
+}
+header nav {
+    display: flex;
+    gap: 25px; /* Adjust gap */
+}
+header nav a{
+    padding: 5px 0; /* Padding top/bottom */
+    font-size: 1em;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    position: relative;
+    border-bottom: 2px solid transparent; /* For hover effect */
+}
+header nav a.active,
+header nav a:hover {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color); /* Underline effect */
+}
+/* --- Header Styling --- */
+/* ... (Keep existing header styles) ... */
+
+header .header-icons {
+    display: flex;
+    align-items: center; /* Vertically align icons/text */
+    gap: 25px; /* Adjust gap between search and account */
+    /* font-size: 1.7em; REMOVED - Set font size on individual elements */
+    cursor: default; /* Remove cursor pointer from the container */
+    margin-left: 15px;
+}
+
+/* Search Input Styling (Moved from inline) */
+.search-container {
+    position: relative; /* For positioning the icon */
+    display: flex;
+    align-items: center;
+}
+.search {
+    height: 35px; /* Slightly taller */
+    width: 200px; /* Adjust width */
+    background-color: rgba(255, 255, 255, 0.8); /* Slightly less transparent */
+    opacity: 0.7; /* Adjust overall opacity if needed */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 18px; /* More rounded */
+    color: var(--text-dark); /* Dark text */
+    padding-left: 15px;
+    padding-right: 35px; /* Make space for icon */
+    font-size: 0.8em; /* Adjust font size */
+    font-family: 'Montserrat', sans-serif;
+    transition: opacity 0.3s ease, width 0.3s ease;
+}
+.search:focus {
+    opacity: 1;
+    width: 230px; /* Expand on focus */
+    outline: none;
+    border-color: var(--primary-color);
+}
+.search::placeholder{
+    color: #555; /* Darker placeholder */
+    font-style: italic;
+    opacity: 0.8;
+}
+.search-icon {
+    position: absolute;
+    right: 12px;
+    font-size: 1.1em; /* Adjust icon size */
+    color: #555; /* Match placeholder */
+    pointer-events: none; /* Icon doesn't block input */
+}
+
+
+/* Account Dropdown Styling */
+.account-menu {
+    position: relative; /* Crucial for positioning the dropdown */
+    display: inline-block; /* Keep elements together */
+}
+
+.account-trigger {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: var(--text-light); /* Inherit header text color */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between icon, text, arrow */
+    transition: color 0.3s ease;
+}
+.account-trigger:hover,
+.account-menu.active .account-trigger { /* Style when dropdown is open */
+     color: var(--primary-color);
+}
+
+.account-icon {
+    font-size: 1.5em; /* Size of the user icon */
+}
+.account-text {
+    font-size: 0.9em; /* Size of "My Account" text */
+    font-weight: 500;
+}
+.dropdown-arrow {
+    font-size: 0.7em; /* Smaller arrow */
+    transition: transform 0.3s ease;
+}
+.account-menu.active .dropdown-arrow {
+     transform: rotate(180deg); /* Flip arrow when open */
+}
+
+
+/* Dropdown Content Styling */
+.dropdown-content {
+    display: none; /* Hidden by default */
+    position: absolute;
+    right: 0; /* Align to the right edge of account-menu */
+    top: calc(100% + 10px); /* Position below the trigger + small gap */
+    background-color: var(--bg-food-item); /* Dark background */
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.4);
+    z-index: 160; /* Ensure it's above header/carousel */
+    border-radius: 5px;
+    overflow: hidden; /* Clip corners */
+    opacity: 0; /* Start faded out */
+    transform: translateY(-10px); /* Start slightly up */
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Style for when the dropdown is shown */
+.dropdown-content.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dropdown-content a {
+    color: var(--text-light);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-content a:hover {
+    background-color: rgba(255, 255, 255, 0.1); /* Subtle hover */
+    color: var(--primary-color);
+}
+
+/* --- End Header Styling --- */
+/* --- End Header Styling --- */
+
+
+/* --- Carousel Base --- */
+.carousel{
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
+    background-color: var(--bg-carousel); /* Fallback background */
+}
+
+/* --- List Items (Background Slides) --- */
+.carousel .list{
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+.carousel .list .item{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0 0 0 0;
+    opacity: 0; /* Hidden by default */
+    transition: opacity 1s ease-in-out; /* Fade transition */
+    z-index: 1; /* Base layer */
+}
+.carousel .list .item.active {
+    opacity: 1; /* Show active slide */
+    z-index: 2; /* Active slide on top */
+}
+.carousel .list .item img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Optional: Darken image slightly */
+    /* filter: brightness(0.8); */
+}
+/* Add overlay */
+.carousel .list .item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0) 100%);
+    z-index: 1;
+}
+
+
+/* --- List Item Content Styling --- */
+.carousel .list .item .content{
+    position: absolute;
+    z-index: 3; /* Above image and overlay */
+    top: 50%;
+    left: 8%; /* Adjust left position */
+    width: 45%; /* Adjust width */
+    max-width: 600px;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    opacity: 0; /* Hidden initially */
+    /* Removed transform for animation, handled by active class */
+    transition: opacity 0.8s ease-out 0.5s; /* Animate opacity in */
+}
+.carousel .list .item.active .content {
+    opacity: 1; /* Fade in content for active slide */
+    /* Removed transform animation trigger */
+}
+
+.carousel .list .item .subtitle{
+    font-weight: 500;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    position: relative;
+    padding-left: 30px; /* Space for the line */
+    font-size: 0.9em;
+}
+.carousel .list .item .subtitle::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 2px;
+    background-color: var(--primary-color);
+}
+
+.carousel .list .item .title{
+    font-size: 4em; /* Adjust size */
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+.carousel .list .item .des {
+    font-size: 0.9em;
+    line-height: 1.7;
+    margin-bottom: 30px;
+    max-width: 80%; /* Limit description width */
+}
+.carousel .list .item .buttons{
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+.carousel .list .item .buttons button{
+    border: none;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 25px; /* Rounded */
+    padding: 10px 25px;
+    font-size: 0.9em;
+    letter-spacing: 0.5px;
+}
+.carousel .list .item .buttons button.discover{
+    background-color: transparent;
+    border: 1px solid var(--text-light);
+    color: var(--text-light);
+}
+.carousel .list .item .buttons button.discover:hover{
+    background-color: var(--text-light);
+    color: var(--text-dark);
+}
+.carousel .list .item .buttons button.play {
+    background-color: var(--primary-color);
+    color: var(--text-dark);
+    width: 40px; /* Circle button */
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+}
+.carousel .list .item .buttons button.play:hover {
+    background-color: #ffdb70; /* Lighter shade */
+    transform: scale(1.1);
+}
+
+
+/* --- Thumbnail Container & Styling (Absolute Position) --- */
+.thumbnail-container {
+    position: absolute;
+    bottom: 40px; /* Adjust distance from bottom */
+    left: 50%;    /* Start positioning from center/right */
+    width: 55%;   /* Adjust width */
+    max-width: 800px; /* Max width for thumbnails + controls */
+    z-index: 100;
+    padding-left: 2%; /* Add some padding from the content edge */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column; /* Stack thumbnails and nav */
+}
+
+.thumbnail {
+    display: flex;
+    gap: 15px; /* Space between thumbnails */
+    width: 100%;
+    overflow: hidden; /* Hide overflowing thumbnails */
+    position: relative;
+    padding-bottom: 10px; /* Space for controls */
+}
+/* Add a wrapper inside .thumbnail for translation */
+.thumbnail .item {
+    width: 180px; /* Width of each thumbnail */
+    height: 250px; /* Height of each thumbnail */
+    flex-shrink: 0;
+    position: relative;
+    border-radius: 15px; /* Rounded corners */
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.5s ease, filter 0.5s ease;
+    filter: brightness(0.7) saturate(0.8); /* Dim inactive */
+    transform: scale(0.95); /* Slightly smaller inactive */
+}
+.thumbnail .item.active {
+     filter: brightness(1) saturate(1); /* Brighten active */
+     transform: scale(1); /* Normal size active */
+}
+
+.thumbnail .item img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    inset: 0;
+}
+.thumbnail .item .content{
+    color: var(--text-light);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 15px;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.thumbnail .item .location {
+    font-size: 0.7em;
+    font-weight: 500;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+.thumbnail .item .title{
+    font-weight: 700;
+    font-size: 1em;
+    line-height: 1.2;
+}
+
+
+/* --- Navigation Controls Styling --- */
+.navigation {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px; /* Space above controls */
+    width: 100%; /* Span width of thumbnail container */
+    position: relative; /* For absolute slide counter */
+}
+
+.navigation button{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--text-light);
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 1.5em;
+    transition: all .3s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.navigation button:hover{
+    background-color: rgba(255, 255, 255, 0.3);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.progress-bar {
+    flex-grow: 1; /* Take remaining space */
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.progress-fill {
+    width: 0%; /* Controlled by JS */
+    height: 100%;
+    background-color: var(--primary-color);
+    border-radius: 2px;
+    transition: width 0.4s linear; /* Animate progress */
+}
+
+.slide-counter {
+    position: absolute;
+    right: 0;
+    bottom: 50%; /* Align vertically with progress bar/buttons */
+    transform: translateY(50%);
+    font-size: 1.8em;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.8);
+}
+.slide-counter .current-slide {
+    color: var(--text-light);
+}
+.slide-counter .total-slides {
+    font-size: 0.6em; /* Smaller total number */
+    opacity: 0.7;
+    vertical-align: baseline; /* Align baseline */
+}
+
+
+
+/* .carousel.processing .thumbnail .item {
+    
+} */
+
+
+/* --- Food Section Styles --- */
+.food-section {
+    padding: 80px 40px;
+    background-color: var(--bg-food-section);
+    text-align: center;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+    overflow: hidden;
+    position: relative;
+    z-index: 5;
+}
+
+.food-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.food-section h2 {
+    font-size: 2.5em;
+    margin-bottom: 30px; /* Adjusted spacing */
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+/* --- NEW: Food Category Tabs Styles --- */
+.food-category-tabs {
+    margin-bottom: 40px; /* Space below tabs */
+    display: flex;
+    flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+    justify-content: center; /* Center tabs */
+    gap: 10px; /* Spacing between tabs */
+}
+
+.tab-button {
+    padding: 10px 20px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--text-light);
+    background-color: var(--bg-food-item); /* Same as item background */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    text-transform: capitalize; /* Or none if you prefer */
+}
+
+.tab-button:hover {
+    background-color: #3a3a3a; /* Slightly lighter hover */
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.tab-button.active {
+    background-color: var(--primary-color);
+    color: var(--text-dark);
+    border-color: var(--primary-color);
+    font-weight: 700;
+}
+/* --- End Food Category Tabs Styles --- */
+
+
+.food-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.food-item {
+    background-color: var(--bg-food-item);
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.4s ease; /* Added opacity transition */
+    display: flex; /* Keep this */
+    flex-direction: column;
+    text-align: left;
+    /* Start visible by default */
+    opacity: 1;
+}
+
+/* Add a class for hiding items smoothly (optional but recommended) */
+.food-item.hidden {
+    opacity: 0;
+    /* Optionally shrink the item space */
+    /* transform: scale(0.9); */
+    /* display: none; -- We will toggle display via JS after transition */
+     pointer-events: none; /* Prevent interaction while hidden */
+     /* You might need height/padding adjustments depending on grid behavior */
+}
+
+
+.food-item:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.food-item img {
+    max-width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.food-item h3 {
+    font-size: 1.4em;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.food-description {
+    font-size: 0.95em;
+    line-height: 1.7;
+    color: #ccc;
+    margin-bottom: 20px;
+    flex-grow: 1;
+}
+
+.food-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.food-price {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.food-rating {
+    font-size: 1.1em;
+    color: #FFD700;
+}
+
+.order-button {
+    background-color: var(--primary-color);
+    color: var(--text-dark);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-top: auto;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.order-button:hover {
+    background-color: #ffdb70;
+    transform: scale(1.03);
+}
+.order-button:active {
+    transform: scale(0.98);
+}
+/* --- End Food Section Styles --- */
+
+
+/* --- Responsive Adjustments --- */
+@media screen and (max-width: 1200px) {
+    /* ... (keep existing header, carousel, thumbnail responsive styles) ... */
+
+    .food-grid { gap: 30px; }
+    .food-section { padding: 60px 20px; }
+    .food-section h2 { margin-bottom: 25px; }
+    .food-category-tabs { margin-bottom: 35px; gap: 8px;}
+    .tab-button { padding: 8px 16px; font-size: 0.85em;}
+}
+
+@media screen and (max-width: 992px) {
+   /* ... (keep existing header, carousel, thumbnail responsive styles) ... */
+
+    .food-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;}
+    .food-item { padding: 20px; }
+    .food-section { padding: 50px 15px; }
+    .food-section h2 { font-size: 2.2em; margin-bottom: 20px;}
+    .food-category-tabs { margin-bottom: 30px; gap: 8px;}
+     .tab-button { padding: 7px 14px; font-size: 0.8em;}
+
+}
+
+@media screen and (max-width: 600px) {
+     /* ... (keep existing header, carousel, thumbnail responsive styles) ... */
+
+     .food-grid { grid-template-columns: 1fr; } /* Single column */
+     .food-section { padding: 40px 10px; }
+     .food-section h2 { font-size: 2em; margin-bottom: 15px;}
+     .food-category-tabs { margin-bottom: 25px; gap: 6px;}
+     .tab-button { padding: 6px 12px; font-size: 0.75em;}
+     .food-item { padding: 15px;}
+     .food-item img { height: 180px; margin-bottom: 15px;}
+     .food-item h3 { font-size: 1.3em;}
+     .food-price { font-size: 1.2em; }
+     .order-button { padding: 10px 15px; font-size: 0.9em;}
+}
+
+/* --- General Content Section Styling --- */
+.content-section {
+    padding: 200px 100px;
+    background-color: var(--bg-food-section); /* Use a consistent dark bg */
+    position: relative;
+    overflow: hidden; /* Important for layout */
+    border-top: 1px solid rgba(255, 255, 255, 0.05); /* Subtle separator */
+
+    /* Scroll reveal base styles */
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.content-section.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.content-section.dark-bg { /* Specific darker background if needed */
+    background-color: #111; /* Even darker */
+}
+
+
+.content-wrapper {
+    max-width: 1200px; /* Control max width */
+    margin: 0 auto; /* Center content */
+    display: flex;
+    align-items: center; /* Vertically center items in the row */
+    gap: 50px; /* Space between image and text */
+}
+
+/* Layout variations */
+.content-section.image-right .content-wrapper {
+    flex-direction: row-reverse; /* Image on the right */
+}
+
+.image-container {
+    flex: 1 1 50%; /* Allow image to take up roughly half */
+    /* Optional: Add subtle effects */
+    border-radius: 8px;
+    overflow: hidden; /* Ensure image stays within bounds */
+}
+
+.image-container img {
+    width: 100%;
+    height: auto;
+    display: block; /* Remove extra space below image */
+    object-fit: cover; /* Ensure image covers container */
+    max-height: 500px; /* Prevent images from becoming too tall */
+}
+
+.text-container {
+    flex: 1 1 50%; /* Allow text to take up roughly half */
+    color: #ccc; /* Default text color */
+    margin-top: 40px;
+}
+
+.section-subtitle {
+    font-weight: 500;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+    position: relative;
+    padding-left: 35px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    color: var(--primary-color); /* Use accent color */
+}
+.section-subtitle::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 25px;
+    height: 2px;
+    background-color: var(--primary-color);
+}
+
+.content-section h2 {
+    font-size: 2.8em; /* Adjust size */
+    font-weight: 700;
+    line-height: 1.2;
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: var(--text-light); /* White or light text */
+}
+
+.content-section p {
+    font-size: 1em;
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.more-link {
+    display: inline-block;
+    margin-top: 15px;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+.more-link:hover {
+    color: var(--text-light);
+}
+
+/* --- Specific Section Styling --- */
+
+/* Menu Sample Section */
+#menu-sample .content-wrapper.menu-layout {
+    align-items: flex-start; /* Align items to top */
+    gap: 30px;
+}
+#menu-sample .image-container.main-dish {
+    flex: 0 0 40%; /* Fixed width for main image */
+    align-self: center; /* Center vertically within flex row */
+}
+#menu-sample .text-container.menu-text {
+    flex: 1 1 auto; /* Take remaining space */
+}
+#menu-sample .image-container.secondary-dish {
+     flex: 0 0 25%; /* Smaller width for secondary image */
+     align-self: flex-end; /* Align to bottom */
+     margin-top: 20px; /* Add some space */
+     max-width: 300px; /* Limit size */
+}
+#menu-sample .subsection {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+#menu-sample .subsection h3 {
+    font-size: 1.5em;
+    color: var(--text-light);
+    margin-bottom: 10px;
+}
+
+
+/* Upcoming Events Section */
+.event-item {
+    margin-top: 25px;
+    padding-left: 15px;
+    border-left: 3px solid var(--primary-color);
+}
+.event-item h4 {
+    font-size: 1.2em;
+    color: var(--text-light);
+    margin: 0 0 5px 0;
+}
+.event-item p {
+    font-size: 0.9em;
+    margin: 0;
+    color: #bbb;
+}
+
+
+/* Reservation Section */
+#reservations.full-width-background {
+    /* Replace with your actual background image */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('image/img1.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-attachment: fixed; /* Parallax effect */
+    padding: 100px 40px 60px 40px; /* Adjust padding */
+    text-align: center;
+    color: var(--text-light);
+}
+#reservations .content-wrapper.centered-content {
+    display: block; /* Override flex for centering */
+    max-width: 700px; /* Limit width of centered text */
+    margin-bottom: 60px; /* Space before footer info */
+}
+#reservations .text-container {
+    text-align: center;
+}
+#reservations .section-subtitle::before {
+    left: 50%; /* Center the line */
+    transform: translate(-50%, -50%);
+}
+#reservations .section-subtitle {
+    padding-left: 0; /* Remove padding */
+    margin-bottom: 20px;
+}
+#reservations h2 {
+    font-size: 3.5em;
+    margin-bottom: 30px;
+}
+.button-primary { /* General button style */
+    background-color: var(--primary-color);
+    color: var(--text-dark);
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    display: inline-block;
+}
+.button-primary:hover {
+    background-color: #ffdb70;
+    transform: scale(1.05);
+}
+.button-primary:active {
+    transform: scale(0.98);
+}
+
+.footer-info {
+    max-width: 1200px;
+    margin: 40px auto 0 auto;
+    padding-top: 40px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    text-align: left;
+}
+.info-block {
+    flex: 1;
+}
+.info-block h4 {
+    font-size: 1.1em;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.info-block p {
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: #ccc;
+    margin-bottom: 8px;
+}
+.info-block .logo-font { /* Optional: Match logo style */
+     font-weight: 700;
+     font-size: 1.2em;
+     color: var(--text-light);
+}
+
+
+/* --- Add to Responsive Adjustments --- */
+
+/* Append these rules inside your existing media queries */
+
+@media screen and (max-width: 992px) {
+    .content-section { padding: 60px 20px; }
+    .content-wrapper { flex-direction: column !important; /* Force column layout */ gap: 30px; }
+    .content-section.image-right .content-wrapper { flex-direction: column-reverse !important; } /* Ensure text is above image */
+
+    .image-container, .text-container {
+        flex: 1 1 100%; /* Take full width */
+        max-width: 600px; /* Limit width in column mode */
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center; /* Center text in column mode */
+    }
+     .text-container { text-align: center; }
+     .section-subtitle { padding-left: 0; }
+     .section-subtitle::before { display: none; } /* Hide line or reposition */
+
+    .content-section h2 { font-size: 2.4em; margin-bottom: 20px; }
+    .content-section p { font-size: 0.95em; }
+
+    /* Menu sample */
+    #menu-sample .content-wrapper.menu-layout { gap: 20px; }
+    #menu-sample .image-container.main-dish,
+    #menu-sample .image-container.secondary-dish {
+        flex-basis: auto; /* Reset flex basis */
+        width: 80%; /* Adjust width */
+        max-width: 350px; /* Limit max width */
+        margin: 10px auto; /* Center images */
+        align-self: center; /* Reset alignment */
+    }
+    #menu-sample .image-container.secondary-dish { order: 3; } /* Ensure secondary is last */
+    #menu-sample .text-container.menu-text { order: 2; }
+
+    /* Reservation */
+     #reservations.full-width-background { padding: 80px 20px 40px 20px; background-attachment: scroll; /* Disable parallax on mobile */ }
+     #reservations h2 { font-size: 2.8em; }
+     .footer-info { flex-direction: column; text-align: center; gap: 40px; padding-top: 30px; margin-top: 20px;}
+     .info-block { max-width: 400px; margin: 0 auto; } /* Center info blocks */
+
+}
+
+@media screen and (max-width: 600px) {
+    .content-section { padding: 40px 15px; }
+    .content-wrapper { gap: 25px; }
+    .content-section h2 { font-size: 2em; margin-bottom: 15px; }
+    .content-section p { font-size: 0.9em; }
+    .button-primary { font-size: 0.9em; padding: 10px 25px; }
+    .more-link { font-size: 0.9em; }
+
+    /* Menu sample */
+     #menu-sample .image-container.main-dish,
+     #menu-sample .image-container.secondary-dish {
+         width: 95%;
+     }
+
+     #menu-sample .subsection h3 { font-size: 1.3em;}
+
+    /* Reservation */
+    #reservations.full-width-background { padding: 60px 15px 30px 15px; }
+    #reservations h2 { font-size: 2.2em; }
+    .footer-info { gap: 30px; }
+    .info-block h4 { font-size: 1em; }
+    .info-block p { font-size: 0.85em; }
+
+}
+.content-section.story-layout {
+    background-color: var(--bg-dark);
+    /* Increase vertical padding */
+    padding: 150px 40px; /* WAS: 100px 40px */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Increase minimum height to ensure it takes more vertical screen space */
+    min-height: 90vh; /* WAS: 80vh - Adjust as needed (e.g., 95vh, 100vh) */
+}
+
+.content-card {
+    display: flex;
+    max-width: 1100px; /* Optional: Slightly increase max-width if desired */
+    height: 500px;
+    background-color: #fff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    border-radius: 5px;
+    overflow: visible;
+}
+
+/* Splatter Effect using Pseudo-elements */
+.content-card::before,
+.content-card::after {
+    content: '';
+    position: absolute;
+    background-repeat: no-repeat;
+    background-size: contain; /* Adjust as needed */
+    z-index: 1; /* Place behind the card */
+    opacity: 1; /* Adjust opacity */
+}
+
+/* Example Positioning for Splatter 1 (Top Left) */
+.content-card::before {
+    /* --- !! Replace with your actual splatter image path !! --- */
+    background-image: url('image/story-back.png'); /* Placeholder */
+    width: 200px;  /* Adjust size */
+    height: 200px; /* Adjust size */
+    top: -50px;    /* Adjust position */
+    left: -70px;   /* Adjust position */
+    transform: rotate(-15deg); /* Optional rotation */
+}
+
+/* Example Positioning for Splatter 2 (Bottom Right) */
+.content-card::after {
+     /* --- !! Replace with your actual splatter image path !! --- */
+     background-image: url('image/story-back2.png'); /* Placeholder */
+    width: 180px;   /* Adjust size */
+    height: 180px;  /* Adjust size */
+    bottom: -60px;  /* Adjust position */
+    right: -50px;   /* Adjust position */
+    transform: rotate(10deg); /* Optional rotation */
+}
+
+
+/* Story Section Image Container */
+.story-layout .image-container {
+    flex: 0 0 45%; /* Adjust width percentage for image */
+    overflow: hidden; /* Hide image overflow */
+    /* Ensure no padding/margin pushes it away from text */
+    padding: 0;
+    margin: 0;
+    border-radius: 5px 0 0 5px; /* Round top-left/bottom-left corners */
+}
+
+.story-layout .image-container img {
+    width: 100%;
+    height: 100%; /* Make image fill container height */
+    object-fit: cover; /* Cover the area, might crop */
+    display: block;
+}
+
+/* Story Section Text Container */
+.story-layout .text-container {
+    flex: 1 1 55%;
+    /* Increase padding inside the text block, especially vertically */
+    padding: 60px 70px; /* WAS: 40px 50px - Adjust as needed */
+    color: var(--text-dark);
+    background-color: #fff;
+    position: relative;
+    border-radius: 0 5px 5px 0;
+}
+
+/* Decorative Sprig/Leaf using Pseudo-element */
+.story-layout .text-container::after {
+    content: '';
+    position: absolute;
+    /* --- !! IMPORTANT: Replace with your actual sprig image path !! --- */
+    background-image: url('image/sprig.png'); /* Placeholder */
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 80px;  /* Adjust size */
+    height: 80px; /* Adjust size */
+    bottom: 15px; /* Adjust position */
+    right: 15px;  /* Adjust position */
+    opacity: 0.7; /* Adjust opacity */
+    /* transform: rotate(5deg); */ /* Optional rotation */
+}
+
+
+/* Adjust text styling specifically for story section if needed */
+.story-layout .section-subtitle {
+    /* Example: Use a different font or style */
+    /* font-family: 'Dancing Script', cursive; /* Needs Google Font import */
+    font-size: 1.3em; /* Make it larger */
+    color: #a08a6b; /* Example: Earthy tone */
+    margin-bottom: 5px;
+    padding-left: 0; /* Remove default padding/line */
+}
+.story-layout .section-subtitle::before {
+    display: none; /* Hide default line */
+}
+
+.story-layout h2 {
+    font-size: 2.5em; /* Adjust title size */
+    color: #333; /* Darker heading color */
+    margin-bottom: 20px;
+}
+
+.story-layout p {
+    font-size: 0.95em;
+    line-height: 1.8;
+    color: #555; /* Standard paragraph text color */
+    margin-bottom: 25px;
+}
+
+.story-layout .more-link {
+    color: #b49c73; /* Match subtitle or use primary */
+    font-weight: bold;
+}
+.story-layout .more-link:hover {
+    color: #333;
+}
+
+/* --- Responsive Adjustments for Story Section --- */
+
+@media screen and (max-width: 992px) {
+    .content-section.story-layout {
+        /* Adjust padding for medium screens */
+        padding: 80px 20px; /* WAS: 60px 20px */
+        min-height: auto; /* Reset min-height for stacked layout */
+    }
+    .content-card {
+        flex-direction: column; /* Stack image and text */
+        max-width: 600px; /* Limit width on medium screens */
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2); /* Reduce shadow */
+    }
+
+    /* Adjust splatter positions for stacked layout */
+     .content-card::before {
+        width: 150px; height: 150px;
+        top: -40px; left: -30px;
+     }
+     .content-card::after {
+        width: 140px; height: 140px;
+        bottom: -50px; right: -30px;
+     }
+
+
+    .story-layout .image-container {
+        flex-basis: auto; /* Reset flex basis */
+        height: 300px; /* Fixed height for image */
+        width: 100%;
+        border-radius: 5px 5px 0 0; /* Round top corners only */
+    }
+    .story-layout .text-container {
+        /* Adjust padding inside text block for medium screens */
+        padding: 40px 45px; /* WAS: 30px 35px */
+         width: 100%;
+         box-sizing: border-box;
+         border-radius: 0 0 5px 5px;
+    }
+    .story-layout .text-container::after { /* Adjust sprig */
+        width: 60px; height: 60px;
+        bottom: 10px; right: 10px;
+    }
+
+     .story-layout h2 { font-size: 2.1em; }
+     .story-layout p { font-size: 0.9em; }
+}
+
+@media screen and (max-width: 600px) {
+    .content-section.story-layout {
+        /* Adjust padding for small screens */
+        padding: 60px 15px; /* WAS: 40px 15px */
+    }
+    .content-card {
+        max-width: 95%; /* Allow slightly wider */
+    }
+     /* Further adjust or hide splatters on small screens if needed */
+     .content-card::before {
+        width: 100px; height: 100px;
+        top: -25px; left: -20px;
+     }
+     .content-card::after {
+        width: 90px; height: 90px;
+        bottom: -30px; right: -20px;
+        opacity: 0.4; /* Fade out more */
+     }
+
+    .story-layout .image-container {
+        height: 250px; /* Reduce image height */
+    }
+    .story-layout .text-container {
+        /* Adjust padding inside text block for small screens */
+        padding: 30px 25px; /* WAS: 25px 20px */
+    }
+    .story-layout .section-subtitle { font-size: 1.1em; }
+    .story-layout h2 { font-size: 1.8em; }
+    .story-layout p { font-size: 0.85em; line-height: 1.7; margin-bottom: 20px;}
+    .story-layout .text-container::after { /* Smaller sprig */
+        width: 45px; height: 45px;
+        bottom: 8px; right: 8px;
+    }
+}
+.food-detail {
+    max-width: 800px;
+    margin: 20px auto;
+    margin-top: 100px;
+    padding: 20px;
+    background-color: var(--bg-food-item);
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    color: var(--text-light);
+}
+
+.food-detail img {
+    max-width: 45%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.food-detail h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    color: var(--primary-color);
+}
+
+.food-detail .price {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.food-detail .description {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: #ccc;
+}
+
+.food-detail .rating {
+    font-size: 1.2em;
+    color: #FFD700;
+    margin-bottom: 20px;
+}
+
+/* .food-detail .order-button {
+  
+} */
+
+.related-food {
+    margin: 20px auto;
+    padding: 20px;
+    background-color: var(--bg-food-item);
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    color: var(--text-light);
+    text-align: center;
+}
+
+.related-food h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: var(--primary-color);
+}
+
+.related-food-grid {
+    display: flex; /* Use flexbox for horizontal layout */
+    justify-content: center; /* Space items evenly */
+    flex-wrap: wrap; /* Wrap items to the next row if they exceed the container width */
+}
+
+.related-food .food-item {
+    width: auto; /* Loại bỏ width cứng để fit vào grid */
+    margin: 0; /* Loại bỏ margin vì grid đã có gap */
+    padding: 20px;
+    box-sizing: border-box; /* Include padding and border in the element's total width */
+    /* Other styles from earlier */
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+  } 
+
+.related-food .food-item a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.related-food .food-item img {
+    max-width: 100%;  /* Hình ảnh chiếm hết chiều ngang của food-item */
+     height: 200px;    /* Chiều cao cố định để các ảnh bằng nhau */
+     object-fit: cover; /* Đảm bảo ảnh không bị méo */
+     border-radius: 8px;
+     margin-bottom: 10px;
+     display: block; /* Ensure there's no extra space below the image */
+     justify-items: center;
+ }
+
+.related-food .food-item h3 {
+   font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 0;
+    color: var(--text-light);
+}
+.related-food .food-grid { /* Class mới cho grid bên trong related-food */
+    display: grid;
+    grid-template-columns: repeat(4, minmax(280px, 1fr)); /* Hai cột */
+    gap: 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    gap: 10px; /* Space between label and controls */
+}
+
+.quantity-selector label {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    border: 1px solid #555;
+    border-radius: 5px;
+    overflow: hidden; /* Hide any overflow from buttons */
+}
+
+.quantity-button {
+    background-color: #444;
+    color: var(--text-light);
+    border: none;
+    padding: 8px 12px;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.quantity-button:hover {
+    background-color: var(--primary-color);
+    color: var(--text-dark);
+}
+
+.quantity-controls input[type="number"] {
+    width: 60px; /* Adjust width */
+    padding: 8px;
+    font-size: 1.2em;
+    text-align: center;
+    border: none;
+    background-color: #333;
+    color: var(--text-light);
+}
+
+/* Hide arrows on number input (Chrome, Safari, Edge, IE) */
+.quantity-controls input[type="number"]::-webkit-outer-spin-button,
+.quantity-controls input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Hide arrows on number input (Firefox) */
+/* input[type=number] {
+    -moz-appearance: textfield;
+} */
+.ui-autocomplete {
+    /* Các kiểu hiện tại của bạn */
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    background-color: #979797;
+    border: 1px solid #636363;
+    z-index: 1000;
+    text-transform: uppercase;
+    font-weight: bold;
+    color:white;
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* Thay đổi màu nền mặc định của các mục */
+.ui-autocomplete li {
+    list-style: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    background-color: #979797; /* Thay đổi thành màu bạn muốn */
+}
+
+.ui-autocomplete li:hover {
+    background-color: #ffffff; /* Thay đổi thành màu bạn muốn */
+    color: black;
+}
+
+.ui-autocomplete div:hover {
+    background:none; /* Thay đổi màu nền khi di chuột qua */
+    border: none;
+    color: black;
+}
+
+.ui-autocomplete li div {
+    font-weight: bold;
+    display: flex; /* Sử dụng flexbox để căn chỉnh hình ảnh và văn bản */
+    align-items: center; /* Căn giữa theo chiều dọc */
+}
