@@ -134,7 +134,7 @@ include 'config/admin_config.php'; // Include database connection
                                         <td><?php echo htmlspecialchars($food['name']); ?></td>
                                         <td><?php echo htmlspecialchars($food['type']); ?></td>
                                         <td><?php echo number_format($food['price'], 0, ',', '.'); ?></td>
-                                        <td style="text-align: center; white-space: nowrap;">
+                                        <td style="text-align: center; white-space: nowrap; padding: 25px 0px;">
                                             <?php echo str_repeat('⭐', $food['rate']) . str_repeat('☆', 5 - $food['rate']); ?>
                                             (<?php echo htmlspecialchars($food['rate']); ?>)
                                         </td>

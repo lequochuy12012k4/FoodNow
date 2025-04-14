@@ -437,7 +437,7 @@ function openEditModal(foodData) {
     currentImageFilename.val(foodData.image || '');
     if (foodData.image) {
         // Adjust path as necessary if $uploadDir is not directly accessible here
-        // Assuming 'uploads/' is the correct relative path from the web root
+        // Assuming 'uploads/' is the cor   rect relative path from the web root
         currentImagePreview.html(`Ảnh hiện tại: <img src="uploads/${foodData.image}" alt="Current image" style="max-height: 50px; vertical-align: middle; margin-left: 10px;">`);
     } else {
         currentImagePreview.html('Chưa có ảnh.');
