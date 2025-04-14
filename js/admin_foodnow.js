@@ -227,3 +227,224 @@ $(document).ready(function() {
     });
 
 }); // End of $(document).ready()
+
+
+$(function () { // Use jQuery's ready function
+
+    // --- Autocomplete Logic ---
+    // Check if the variable exists and is an array before initializing
+    if (typeof availableFoodsFromPHP !== 'undefined' && Array.isArray(availableFoodsFromPHP)) {
+
+        console.log('Initializing jQuery Autocomplete with data:', availableFoodsFromPHP); // Debug log
+
+        if (availableFoodsFromPHP.length === 0) {
+            console.warn("Autocomplete data array (availableFoodsFromPHP) received from PHP is empty.");
+            // Optional: Inform the user or disable the input
+            // $("#searchfoods").attr('placeholder', 'No food data found');
+        }
+
+        $("#searchfoods").autocomplete({
+            source: availableFoodsFromPHP, // *** Use the PHP-generated variable ***
+            minLength: 1, // Start searching after 1 character
+            select: function (event, ui) {
+                // ui.item contains the selected object { label, value, image, price, url }
+                var selectedFood = ui.item.value;
+                var selectedUrl = ui.item.url; // Get the URL
+
+                console.log("Selected item:", ui.item); // Log the selected item object
+
+                // **Redirect if URL exists**
+                if (selectedUrl) {
+                    window.location.href = selectedUrl; // Redirect to the detail page
+                    return false; // Prevent the input field from being updated with the value after redirection
+                } else {
+                    // Fallback if no URL (e.g., just show an alert or do nothing)
+                    console.warn("No URL found for selected food:", ui.item);
+                    // alert("Bạn đã chọn: " + selectedFood + " - Giá: " . ui.item.price);
+                    // If you don't redirect, you might want the input field to show the selected name,
+                    // so don't return false in this case.
+                }
+                // If not redirecting, allow the default behavior (fill input with ui.item.value)
+            }
+        }).autocomplete("instance")._renderItem = function (ul, item) {
+            // Customize how each item is displayed in the suggestion list
+            var itemContent = `
+                <div class="div-hover" style="display: flex; align-items: center; gap: 10px; padding: 5px 8px; border-radius: 4px; cursor: pointer; background-color: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); color: black;">
+                    <img src="${item.image}" alt="${item.label}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 4px; flex-shrink: 0; border: 1px solid #eee;">
+                    <div style="display: flex; flex-direction: column; flex-grow: 1; line-height: 1.3;">
+                        <div style=" font-family: 'Montserrat', sans-serif;">${item.label}</div>
+                        <div style="font-size: 0.85em; color: #444;">${item.price}</div>
+                    </div>
+                </div>`;
+
+            return $("<li>")
+                .append(itemContent) // Use the formatted HTML string
+                .appendTo(ul);
+        };
+
+        // Optional: Trigger search on focus (can be annoying, use with caution)
+        // $("#searchfoods").on("focus", function() {
+        //     $(this).autocomplete("search", $(this).val());
+        // });
+
+    } else {
+        // This case means the PHP block didn't run correctly or didn't define the variable
+        console.error("Autocomplete data (availableFoodsFromPHP) is missing or not an array. Check PHP execution and the inline script in the HTML source. Autocomplete disabled.");
+        // Optionally disable the input or show a different placeholder
+         $("#searchfoods").prop('disabled', true).attr('placeholder', 'Search unavailable');
+    }
+
+    // --- End of Autocomplete Logic ---
+
+});
+$(document).ready(function() {
+
+    // --- Live Search Functionality ---
+    const searchInput = $('#admin-search-food');
+    const tableBody = $('#food-table-body');
+    const tableRows = tableBody.find('tr'); // Get all initial data rows
+    const noResultsRow = $('#no-results-row');
+
+    searchInput.on('input', function() {
+        const searchTerm = $(this).val().toLowerCase().trim();
+        let visibleRowCount = 0;
+
+        // Hide the "no results" row initially for each search action
+        noResultsRow.hide();
+
+        tableRows.each(function() {
+            const row = $(this);
+            // Make sure we don't try to filter the "no results" row itself
+            if (row.attr('id') === 'no-results-row') {
+                return; // Skip this row
+            }
+
+            // Find the cell containing the food name (assuming it's the 2nd column)
+            const foodNameCell = row.find('td:nth-child(2)'); // Index 2 (1-based)
+            const foodName = foodNameCell.text().toLowerCase();
+
+            // Check if the food name includes the search term
+            const isMatch = foodName.includes(searchTerm);
+
+            // Show or hide the row based on the match
+            row.toggle(isMatch); // toggle(true) shows, toggle(false) hides
+
+            if (isMatch) {
+                visibleRowCount++;
+            }
+        });
+
+        // Show the "no results" row if no data rows are visible AND there's a search term
+        if (visibleRowCount === 0 && searchTerm !== '') {
+            noResultsRow.show();
+        }
+    });
+
+    // --- Existing Modal Logic (Keep this if you have it) ---
+    const modal = $('#add-item-modal');
+    const showModalBtn = $('#show-add-modal-btn');
+    const closeModalBtn = $('#close-modal-btn');
+    const overlay = $('.modal-overlay');
+    const form = $('#add-item-form');
+    const modalTitle = $('#modal-title');
+    const formAction = $('#form-action');
+    const editItemId = $('#edit-item-id');
+    const currentImageFilename = $('#current-image-filename');
+    const currentImagePreview = $('#current-image-preview');
+    const submitButtonText = $('#modal-submit-button-text');
+
+    // Function to open the modal
+    function openModal() {
+        modal.fadeIn(200);
+    }
+
+    // Function to close the modal
+    function closeModal() {
+        modal.fadeOut(200);
+        resetForm(); // Reset form when closing
+    }
+
+    // Function to reset the form
+    function resetForm() {
+        form[0].reset(); // Reset native form fields
+        modalTitle.text('Thêm Món ăn mới');
+        formAction.val('add');
+        editItemId.val('');
+        currentImageFilename.val('');
+        currentImagePreview.html(''); // Clear image preview
+        submitButtonText.text('Thêm món ăn');
+        $('#add-item-form-message').hide().removeClass('alert-success alert-danger').text('');
+    }
+
+    // Event listeners for modal
+    showModalBtn.on('click', function() {
+        resetForm(); // Ensure form is clean for adding
+        openModal();
+    });
+    closeModalBtn.on('click', closeModal);
+    overlay.on('click', closeModal);
+
+    // Handle Escape key to close modal
+    $(document).on('keydown', function(event) {
+        if (event.key === "Escape" && modal.is(':visible')) {
+            closeModal();
+        }
+    });
+
+    // --- Form submission (Keep or adapt your existing submission logic) ---
+    // Example:
+    // form.on('submit', function(e) {
+    //     // Add your AJAX submission or standard form handling here
+    //     // If using standard POST, the page will reload anyway.
+    //     // If using AJAX, handle success/error messages and potentially update table.
+    //     // Example: Prevent default if using AJAX
+    //     // e.preventDefault();
+    //     // console.log("Form submitted (implement AJAX or let default happen)");
+    // });
+
+
+}); // End of $(document).ready()
+
+
+// --- Edit Modal Function (Keep outside document.ready) ---
+// Make sure this function is globally accessible if called via inline onclick
+function openEditModal(foodData) {
+    const modal = $('#add-item-modal');
+    const form = $('#add-item-form');
+    const modalTitle = $('#modal-title');
+    const formAction = $('#form-action');
+    const editItemId = $('#edit-item-id');
+    const currentImageFilename = $('#current-image-filename');
+    const currentImagePreview = $('#current-image-preview');
+    const submitButtonText = $('#modal-submit-button-text');
+
+    // Reset form before populating
+    form[0].reset();
+    $('#add-item-form-message').hide().removeClass('alert-success alert-danger').text('');
+
+
+    // Populate form fields
+    modalTitle.text('Chỉnh sửa Món ăn');
+    formAction.val('edit');
+    editItemId.val(foodData.id);
+    $('#item-name').val(foodData.name);
+    $('#item-type').val(foodData.type);
+    $('#item-price').val(foodData.price); // Ensure price doesn't have formatting here
+    $('#item-rating').val(foodData.rate);
+    $('#item-description').val(foodData.description || ''); // Handle null description
+
+    // Handle image preview
+    currentImageFilename.val(foodData.image || '');
+    if (foodData.image) {
+        // Adjust path as necessary if $uploadDir is not directly accessible here
+        // Assuming 'uploads/' is the correct relative path from the web root
+        currentImagePreview.html(`Ảnh hiện tại: <img src="uploads/${foodData.image}" alt="Current image" style="max-height: 50px; vertical-align: middle; margin-left: 10px;">`);
+    } else {
+        currentImagePreview.html('Chưa có ảnh.');
+    }
+
+
+    submitButtonText.text('Lưu thay đổi');
+
+    modal.fadeIn(200); // Show the modal
+}

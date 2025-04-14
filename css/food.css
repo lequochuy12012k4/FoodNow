@@ -1399,8 +1399,9 @@ header .header-icons {
     z-index: 1000;
     text-transform: uppercase;
     font-weight: bold;
-    color:white;
+    color:rgb(0, 0, 0);
     font-family: 'Montserrat', sans-serif;
+    background-color: white;
 }
 
 /* Thay đổi màu nền mặc định của các mục */
@@ -1409,17 +1410,19 @@ header .header-icons {
     padding: 5px 10px;
     cursor: pointer;
     font-weight: bold;
-    color: white;
+    color: rgb(0, 0, 0);
     background-color: #979797; /* Thay đổi thành màu bạn muốn */
 }
 
 .ui-autocomplete li:hover {
     background-color: #ffffff; /* Thay đổi thành màu bạn muốn */
     color: black;
+    border: white;
 }
 
+
 .ui-autocomplete div:hover {
-    background:none; /* Thay đổi màu nền khi di chuột qua */
+    background-color: white; /* Thay đổi màu nền khi di chuột qua */
     border: none;
     color: black;
 }

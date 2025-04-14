@@ -1,4 +1,4 @@
-    document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const nextButton = document.getElementById('next');
     const prevButton = document.getElementById('prev');
     const carouselList = document.querySelector('.carousel .list');
@@ -155,7 +155,7 @@
     } else {
         console.warn("Food tab buttons or food items not found. Filtering disabled.");
     }
-    
+
     const contentSections = document.querySelectorAll('.content-section');
 
     if (contentSections.length > 0) {
@@ -228,7 +228,7 @@
     const orderNowButton = document.getElementById('order-now-button'); // Get the order button
 
     quantityButtons.forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function () {
             const action = this.dataset.action;
             let currentValue = parseInt(quantityInput.value);
 
@@ -241,7 +241,7 @@
     });
 
     // Add event listener to the order button
-    orderNowButton.addEventListener('click', function() {
+    orderNowButton.addEventListener('click', function () {
         const quantity = parseInt(quantityInput.value); // Get the quantity
 
         // Do something with the quantity (e.g., display an alert)
@@ -255,7 +255,7 @@
         //  saveCartToLocalStorage(cart); // Save the cart
     });
 
-}); 
+});
 
 
 function sendQuantityToServer(quantity) {
@@ -270,57 +270,83 @@ function sendQuantityToServer(quantity) {
             quantity: quantity
         })
     })
-    .then(response => {
-        if (response.ok) {
-            console.log('Quantity sent to server');
-        } else {
-            console.error('Error sending quantity to server');
-        }
-    })
-    .catch(error => {
-        console.error('Network error:', error);
-    });
+        .then(response => {
+            if (response.ok) {
+                console.log('Quantity sent to server');
+            } else {
+                console.error('Error sending quantity to server');
+            }
+        })
+        .catch(error => {
+            console.error('Network error:', error);
+        });
 }
-$(function () {
-    var availableFoods = [
-        { label: "Spicy Tomato Pasta", value: "Spicy Tomato Pasta", image: "image/img1.jpg", price: "$14.50" },
-        { label: "Cheeseburger Deluxe", value: "Cheeseburger Deluxe", image: "image/img2.jpg", price: "$14.50" },
-        { label: "Grilled Steak", value: "Grilled Steak", image: "image/steak.jpg", price: "$14.50" },
-        { label: "Sushi Platter", value: "Sushi Platter", image: "image/sushi.jpg", price: "$14.50" },
-        { label: "Chocolate Cake", value: "Chocolate Cake", image: "image/chocolatecake.jpg", price: "$14.50" },
-        { label: "Ice Cream Sundae", value: "Ice Cream Sundae", image: "image/icecream.jpg", price: "$14.50" },
-        { label: "Fresh Lemonade", value: "Fresh Lemonade", image: "image/lemonade.jpg", price: "$14.50" },
-        { label: "Iced Coffee", value: "Iced Coffee", image: "image/coffee.jpg", price: "$14.50" },
-        { label: "Vanilla Cupcake", value: "Vanilla Cupcake", image: "image/cupcake.jpg", price: "$14.50" },
-        { label: "Cheesecake", value: "Cheesecake", image: "image/cheesecake.jpg", price: "$14.50" },
-        { label: "Strawberries", value: "Strawberries", image: "image/strawberries.jpg", price: "$14.50" },
-        { label: "Watermelon", value: "Watermelon", image: "image/watermelon.jpg", price: "$14.50" },
-        { label: "Fries", value: "Fries", image: "image/fries.jpg", price: "$14.50" },
-        { label: "Salad", value: "Salad", image: "image/salad.jpg", price: "$14.50" }
-    ];
 
-    $("#searchfoods").autocomplete({
-        source: availableFoods,
-        select: function (event, ui) {
-            var selectedFood = ui.item.value;
-            if (selectedFood === "Spicy Tomato Pasta") {
-                window.location.href = "pasta.html";
-            } else if (selectedFood === "Cheeseburger Deluxe") {
-                window.location.href = "cheeseburger.html";
-            }
-            else {
-                alert("Bạn đã chọn: " + selectedFood);
-            }
+$(function () { // Use jQuery's ready function
+
+    // --- Autocomplete Logic ---
+    // Check if the variable exists and is an array before initializing
+    if (typeof availableFoodsFromPHP !== 'undefined' && Array.isArray(availableFoodsFromPHP)) {
+
+        console.log('Initializing jQuery Autocomplete with data:', availableFoodsFromPHP); // Debug log
+
+        if (availableFoodsFromPHP.length === 0) {
+            console.warn("Autocomplete data array (availableFoodsFromPHP) received from PHP is empty.");
+            // Optional: Inform the user or disable the input
+            // $("#searchfoods").attr('placeholder', 'No food data found');
         }
-    }).autocomplete("instance")._renderItem = function (ul, item) {
-        return $("<li>")
-            .append("<div style='background:none; border:none; color: black;font-weight: bold; display: flex; align-items: center;'>" +
-                "<img src='" + item.image + "'style='width:50px; height:50px; margin-right:10px;'/>" +
-                "<div style='display: flex; flex-direction: column;'>" +
-                "<div>" + item.label + "</div>" +
-                "<div style='font-weight: normal; font-style: italic; font-size: 1em;'>" + item.price + "</div>" +
-                "</div>" +
-                "</div>")
-            .appendTo(ul);
-    };
-});
+
+        $("#searchfoods").autocomplete({
+            source: availableFoodsFromPHP, // *** Use the PHP-generated variable ***
+            minLength: 1, // Start searching after 1 character
+            select: function (event, ui) {
+                // ui.item contains the selected object { label, value, image, price, url }
+                var selectedFood = ui.item.value;
+                var selectedUrl = ui.item.url; // Get the URL
+
+                console.log("Selected item:", ui.item); // Log the selected item object
+
+                // **Redirect if URL exists**
+                if (selectedUrl) {
+                    window.location.href = selectedUrl; // Redirect to the detail page
+                    return false; // Prevent the input field from being updated with the value after redirection
+                } else {
+                    // Fallback if no URL (e.g., just show an alert or do nothing)
+                    console.warn("No URL found for selected food:", ui.item);
+                    // alert("Bạn đã chọn: " + selectedFood + " - Giá: " . ui.item.price);
+                    // If you don't redirect, you might want the input field to show the selected name,
+                    // so don't return false in this case.
+                }
+                // If not redirecting, allow the default behavior (fill input with ui.item.value)
+            }
+        }).autocomplete("instance")._renderItem = function (ul, item) {
+            // Customize how each item is displayed in the suggestion list
+            var itemContent = `
+                <div class="div-hover" style="display: flex; align-items: center; gap: 10px; padding: 5px 8px; border-radius: 4px; cursor: pointer; background-color: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); color: black;">
+                    <img src="${item.image}" alt="${item.label}" style="width: 45px; height: 45px; object-fit: cover; border-radius: 4px; flex-shrink: 0; border: 1px solid #eee;">
+                    <div style="display: flex; flex-direction: column; flex-grow: 1; line-height: 1.3;">
+                        <div style=" font-family: 'Montserrat', sans-serif;">${item.label}</div>
+                        <div style="font-size: 0.85em; color: #444;">${item.price}</div>
+                    </div>
+                </div>`;
+
+            return $("<li>")
+                .append(itemContent) // Use the formatted HTML string
+                .appendTo(ul);
+        };
+
+        // Optional: Trigger search on focus (can be annoying, use with caution)
+        // $("#searchfoods").on("focus", function() {
+        //     $(this).autocomplete("search", $(this).val());
+        // });
+
+    } else {
+        // This case means the PHP block didn't run correctly or didn't define the variable
+        console.error("Autocomplete data (availableFoodsFromPHP) is missing or not an array. Check PHP execution and the inline script in the HTML source. Autocomplete disabled.");
+        // Optionally disable the input or show a different placeholder
+         $("#searchfoods").prop('disabled', true).attr('placeholder', 'Search unavailable');
+    }
+
+    // --- End of Autocomplete Logic ---
+
+}); // End of jQuery $(function() { ... });
