@@ -1,6 +1,7 @@
 <?php
-include 'parts/header.php'
+include 'parts/header.php';
 ?>
+
 <body>
     <?php
     include 'parts/main_items.php';

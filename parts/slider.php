@@ -5,7 +5,7 @@
             <div class="content">
                 <div class="subtitle">Japan Alps</div>
                 <div class="title">NAGANO<br>PREFECTURE</div>
-                <div class="des">   
+                <div class="des">
                     Mauris malesuada nisi sit amet augue accumsan tincidunt. Maecenas tincidunt, velit ac porttitor
                     pulvinar, tortor eros facilisis libero.
                 </div>
@@ -139,15 +139,14 @@
         </div>
 
         <div class="navigation">
-            <button id="prev">
-                <   </button>
-                    <button id="next">></button>
-                    <div class="progress-bar">
-                        <div class="progress-fill"></div>
-                    </div>
-                    <div class="slide-counter">
-                        <span class="current-slide">01</span> / <span class="total-slides">04</span>
-                    </div>
+            <button id="prev"> < </button>
+            <button id="next"> > </button>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="slide-counter">
+                <span class="current-slide">01</span> / <span class="total-slides">04</span>
+            </div>
         </div>
     </div>
 </div>

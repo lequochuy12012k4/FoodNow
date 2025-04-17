@@ -9,7 +9,7 @@ include 'config/admin_config.php'; // Include database connection
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FoodNow Admin - Quản lý Món ăn</title>
     <!-- Link to your CSS file -->
-    <link rel="stylesheet" href="css/admin_foodnow.css">
+    <link rel="stylesheet" href="css/admin.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Google Fonts -->
@@ -25,13 +25,13 @@ include 'config/admin_config.php'; // Include database connection
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <a href="admin_foodnow.php" class="logo">FoodNow Admin</a>
+                <a href="admin.php" class="logo">FoodNow Admin</a>
             </div>
             <nav class="sidebar-nav">
                 <ul>
                     <li><a href="#"><i class="fas fa-tachometer-alt"></i> <span>Tổng quan</span></a></li>
                     <!-- Make the current page active -->
-                    <li class="active"><a href="admin_foodnow.php"><i class="fas fa-utensils"></i> <span>Quản lý Món ăn</span></a></li>
+                    <li class="active"><a href="admin.php"><i class="fas fa-utensils"></i> <span>Quản lý Món ăn</span></a></li>
                     <li><a href="#"><i class="fas fa-receipt"></i> <span>Quản lý Đơn hàng</span></a></li>
                     <li><a href="#"><i class="fas fa-users"></i> <span>Quản lý Người dùng</span></a></li>
                     <li><a href="#"><i class="fas fa-cog"></i> <span>Cài đặt</span></a></li>
@@ -152,7 +152,7 @@ include 'config/admin_config.php'; // Include database connection
                                                 onclick="openEditModal(<?php echo htmlspecialchars(json_encode($food), ENT_QUOTES, 'UTF-8'); ?>)">
                                                 <i class="fas fa-edit"></i> Sửa
                                             </button>
-                                            <a href="admin_foodnow.php?action=delete&id=<?php echo $food['id']; ?>"
+                                            <a href="admin.php?action=delete&id=<?php echo $food['id']; ?>"
                                                 class="btn btn-delete"
                                                 onclick="return confirm('Bạn có chắc chắn muốn xóa món ăn: \'<?php echo htmlspecialchars(addslashes($food['name']), ENT_QUOTES); ?>\'?\nHành động này không thể hoàn tác.');">
                                                 <i class="fas fa-trash-alt"></i> Xóa
@@ -177,7 +177,7 @@ include 'config/admin_config.php'; // Include database connection
             <h2 id="modal-title">Thêm Món ăn mới</h2>
             <div id="add-item-form-message" class="alert" style="display: none; margin-bottom: 15px;"></div>
 
-            <form id="add-item-form" action="admin_foodnow.php" method="post" enctype="multipart/form-data">
+            <form id="add-item-form" action="admin.php" method="post" enctype="multipart/form-data">
                 <input type="hidden" id="form-action" name="action" value="add">
                 <input type="hidden" id="edit-item-id" name="id" value="">
                 <input type="hidden" id="current-image-filename" name="current_image" value="">
@@ -240,7 +240,7 @@ include 'config/admin_config.php'; // Include database connection
     </div>
 
     <!-- Link to your JS file -->
-    <script src="js/admin_foodnow.js"></script>
+    <script src="js/admin.js"></script>
 
 </body>
 
