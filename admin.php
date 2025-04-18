@@ -1,5 +1,15 @@
 <?php
 include 'config/admin_config.php'; // Include database connection
+
+// Check if user is logged in and is an admin
+if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_SESSION["role"]) || $_SESSION["role"] !== 'admin') {
+    // If not logged in or not an admin, redirect to login page
+    header("location: login.php");
+    exit;
+}
+
+// If logged in as admin, continue displaying the page
+$admin_username = htmlspecialchars($_SESSION["username"]); // Get admin username for display
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -35,7 +45,7 @@ include 'config/admin_config.php'; // Include database connection
                     <li><a href="#"><i class="fas fa-receipt"></i> <span>Quản lý Đơn hàng</span></a></li>
                     <li><a href="#"><i class="fas fa-users"></i> <span>Quản lý Người dùng</span></a></li>
                     <li><a href="#"><i class="fas fa-cog"></i> <span>Cài đặt</span></a></li>
-                    <li><a href="#"><i class="fas fa-sign-out-alt"></i> <span>Đăng xuất</span></a></li>
+                    <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> <span>Đăng xuất</span></a></li>
                 </ul>
             </nav>
         </aside>
@@ -55,10 +65,10 @@ include 'config/admin_config.php'; // Include database connection
         <button class="search-btn"><i class="fas fa-search"></i></button>
         <div class="user-info">
             <img src="placeholder-avatar.png" alt="Admin Avatar" class="avatar">
-            <span>Admin</span> <i class="fas fa-caret-down"></i>
+            <span><?php echo $admin_username; ?>!</span> <i class="fas fa-caret-down"></i>
             <div class="user-dropdown">
                 <a href="#">Hồ sơ</a>
-                <a href="#">Đăng xuất</a>
+                <a href="logout.php">Đăng xuất</a>
             </div>
         </div>
     </div>
