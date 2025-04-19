@@ -56,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             if ($hashed_password !== null && password_verify($password, $hashed_password)) {
                                 // --- Login Successful ---
                                 $_SESSION["loggedin"] = true;
-                                $_SESSION["user_id"] = $db_id;
+                                $_SESSION["id"] = $db_id;
                                 $_SESSION["username"] = $db_username;
                                 $_SESSION["fullname"] = $db_fullname;
                                 $_SESSION["role"] = $db_role;

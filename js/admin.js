@@ -377,10 +377,7 @@ $(document).ready(function() {
     }
 
     // Event listeners for modal
-    showModalBtn.on('click', function() {
-        resetForm(); // Ensure form is clean for adding
-        openModal();
-    });
+ z
     closeModalBtn.on('click', closeModal);
     overlay.on('click', closeModal);
 
@@ -447,4 +444,24 @@ function openEditModal(foodData) {
     submitButtonText.text('Lưu thay đổi');
 
     modal.fadeIn(200); // Show the modal
+    $('#admin-search-food').on('keyup', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        $('#food-table-body tr').filter(function() {
+            // Show/hide row based on search term in food name (column 1) or type (column 2)
+            const foodName = $(this).find('td:nth-child(2)').text().toLowerCase();
+            const foodType = $(this).find('td:nth-child(3)').text().toLowerCase();
+            $(this).toggle(foodName.indexOf(searchTerm) > -1 || foodType.indexOf(searchTerm) > -1);
+        });
+    });
+
+    // --- User Search (Admin Panel) --- (Add this if you have the search input)
+    $('#admin-search-user').on('keyup', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        $('#user-table-body tr').filter(function() {
+            // Show/hide row based on search term in username (column 1) or email (column 2)
+            const username = $(this).find('td:nth-child(2)').text().toLowerCase();
+            const email = $(this).find('td:nth-child(3)').text().toLowerCase();
+            $(this).toggle(username.indexOf(searchTerm) > -1 || email.indexOf(searchTerm) > -1);
+        });
+    });
 }

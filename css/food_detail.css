@@ -1,0 +1,213 @@
+/* --- Food Detail Page Styles --- */
+.food-detail {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    gap: 30px; /* Space between image and info */
+    padding: 40px 20px; /* Add padding */
+    max-width: 1100px; /* Limit width and center */
+    margin: 30px auto; /* Center the section */
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.food-detail .detail-image {
+    flex: 1 1 400px; /* Allow image to grow/shrink, base width 400px */
+    max-width: 500px; /* Max image width */
+}
+
+.food-detail .detail-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    object-fit: cover; /* Ensure image covers area nicely */
+    max-height: 500px; /* Limit image height */
+}
+
+.food-detail .detail-info {
+    flex: 1 1 450px; /* Allow info to grow/shrink, base width 450px */
+    display: flex;
+    flex-direction: column;
+}
+
+.food-detail h1 {
+    font-size: 2.5em; /* Larger title */
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.food-detail .price {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #ff6b6b; /* Theme color */
+    margin-bottom: 15px;
+}
+
+.food-detail .rating {
+    font-size: 1.2em;
+    color: #f39c12; /* Gold for stars */
+    margin-bottom: 20px;
+}
+.food-detail .rating-value {
+    font-size: 0.8em;
+    color: #888;
+    margin-left: 5px;
+}
+
+.food-detail .description {
+    font-size: 1.05em;
+    color: #555;
+    line-height: 1.7;
+    margin-bottom: 25px;
+    flex-grow: 1; /* Allow description to take available space */
+}
+
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+    gap: 15px;
+}
+
+.quantity-selector label {
+    font-weight: bold;
+    color: #555;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    overflow: hidden; /* Clip button borders inside */
+}
+
+.quantity-controls input[type="number"] {
+    width: 60px;
+    text-align: center;
+    border: none;
+    padding: 8px 5px;
+    font-size: 1em;
+    font-weight: bold;
+    /* Remove spinner arrows */
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+.quantity-controls input[type="number"]::-webkit-outer-spin-button,
+.quantity-controls input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+.quantity-button {
+    background-color: #f0f0f0;
+    border: none;
+    /* border-left: 1px solid #ddd; */
+    /* border-right: 1px solid #ddd; */
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 1.2em;
+    line-height: 1;
+    color: #555;
+    transition: background-color 0.2s ease;
+}
+.quantity-button:hover {
+    background-color: #e0e0e0;
+}
+.quantity-button[data-action="decrease"] {
+    border-right: 1px solid #ddd;
+}
+.quantity-button[data-action="increase"] {
+     border-left: 1px solid #ddd;
+ }
+
+.food-detail .order-button {
+    padding: 12px 25px;
+    font-size: 1.1em;
+    width: 100%; /* Make button full width in its container */
+    max-width: 300px; /* Optional max width */
+    margin-top: auto; /* Push to bottom if description is short */
+}
+.food-detail .order-button i {
+    margin-right: 8px;
+}
+
+/* --- Related Food Section --- */
+.related-food {
+    padding: 40px 20px;
+    max-width: 1200px; /* Consistent max-width */
+    margin: 30px auto;
+}
+
+.related-food h2 {
+    text-align: center;
+    font-size: 2em;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.related-food-grid {
+    /* Uses the same .food-grid styles, ensure they allow for 4 items */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjust minmax if needed */
+}
+
+
+/* General Styles if not defined elsewhere */
+.container {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Add styles for .food-item-link and .view-details-prompt if needed */
+.food-item-link {
+    text-decoration: none;
+    color: inherit;
+    display: block; /* Make the link container block */
+    position: relative; /* For positioning prompt */
+    /* Add padding or margin if needed inside the grid item */
+}
+
+.view-details-prompt {
+    display: block; /* Or inline-block */
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #ff6b6b;
+    font-weight: 500;
+    opacity: 0; /* Hide initially */
+    transition: opacity 0.2s ease;
+}
+
+.food-item:hover .view-details-prompt {
+    opacity: 1; /* Show on hover */
+}
+
+
+/* Responsive Adjustments for Detail Page */
+@media (max-width: 768px) {
+    .food-detail {
+        flex-direction: column; /* Stack image and info */
+        padding: 20px 15px;
+    }
+    .food-detail .detail-image {
+        max-width: 100%; /* Allow image full width */
+        flex-basis: auto; /* Reset flex-basis */
+        max-height: 350px; /* Adjust max height for mobile */
+    }
+    .food-detail .detail-info {
+        flex-basis: auto;
+    }
+    .food-detail h1 {
+        font-size: 2em;
+    }
+    .food-detail .price {
+        font-size: 1.5em;
+    }
+    .food-detail .order-button {
+        max-width: 100%; /* Allow button full width */
+    }
+}

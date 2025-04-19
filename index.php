@@ -4,7 +4,7 @@ include 'parts/header.php';
 
 <body>
     <?php
-    include 'parts/main_items.php';
+    include 'parts/navbar.php';
     include 'parts/slider.php';
     ?>
     <section id="our-story" class="content-section story-layout">

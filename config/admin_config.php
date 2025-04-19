@@ -200,7 +200,31 @@ if (isset($_SESSION['message'])) {
 }
 
 mysqli_close($conn);
-// =========================================================================
-// PHP BACKEND LOGIC - END
-// =========================================================================
+$db_host = 'localhost';      // Or your database host
+$db_name = 'foodnow';        // Your database name
+$db_user = 'root';  // Your database username
+$db_pass = '';  // Your database password
+$charset = 'utf8mb4';
+
+// PDO connection options
+// IMPORTANT: Set error mode to exceptions for easier error handling
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, // Default fetch mode as associative array
+    PDO::ATTR_EMULATE_PREPARES   => false, // Use native prepared statements
+];
+
+// Data Source Name (DSN)
+$dsn = "mysql:host=$db_host;dbname=$db_name;charset=$charset";
+
+try {
+    // Create the PDO instance (the connection object)
+    $pdo = new PDO($dsn, $db_user, $db_pass, $options);
+} catch (\PDOException $e) {
+    // Log the error properly in a production environment
+    error_log("Database Connection Error: " . $e->getMessage());
+    // Display a generic error message to the user and stop script execution
+    // Avoid echoing $e->getMessage() directly in production!
+    die("Database connection failed. Please check configuration or contact support.");
+}
 ?>
