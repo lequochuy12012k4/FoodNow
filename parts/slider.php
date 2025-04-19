@@ -76,7 +76,7 @@
             </div>
         </div>
         <div class="item">
-            <img src="image/img6.jpeg" alt="Los Lances Beach">
+            <img src="image/img6.jpg" alt="Los Lances Beach">
             <div class="content">
                 <div class="subtitle">Tarifa - Spain</div>
                 <div class="title">LOS LANCES<br>BEACH</div>
@@ -130,7 +130,7 @@
                 </div>
             </div>
             <div class="item">
-                <img src="image/img6.jpeg" alt="Thumbnail Nagano">
+                <img src="image/img6.jpg" alt="Thumbnail Nagano">
                 <div class="content">
                     <div class="location">Japan Alps - Japan</div>
                     <div class="title">Nagano Prefecture</div>
