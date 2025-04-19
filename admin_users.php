@@ -183,7 +183,7 @@ $users = [];
 $last_admin_check_needed = false; // Flag to check if we need the last admin count later
 
 try {
-    $stmt = $pdo->query("SELECT id, username, email, role, registration_date FROM users ORDER BY registration_date DESC");
+    $stmt = $pdo->query("SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC");
     if ($stmt) {
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -207,6 +207,31 @@ try {
     $msg_type = "danger";
     // Ensure users array is empty on error
     $users = [];
+}
+$users = [];
+$last_admin_check_needed = false; // Flag to check if we need the last admin count later
+// ADD THIS LINE: Initialize total users count
+$total_users = 0;
+
+try {
+    $stmt = $pdo->query("SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC");
+    if ($stmt) {
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // ADD THIS LINE: Calculate the count after fetching
+        $total_users = count($users);
+
+        // Check if we need to determine the last admin (only if there are users)
+        if (!empty($users)) {
+            // ... (rest of your admin count check logic) ...
+        }
+
+    } else {
+        // ... (your existing error handling) ...
+    }
+} catch (PDOException $e) {
+    // ... (your existing error handling) ...
+    $users = []; // Ensure users array is empty on error
+    $total_users = 0; // Ensure count is 0 on error
 }
 ?>
 <!DOCTYPE html>
@@ -396,10 +421,10 @@ try {
             <nav class="sidebar-nav">
                  <ul>
                     <li><a href="admin.php"><i class="fas fa-tachometer-alt"></i> <span>Tổng quan</span></a></li>
-                    <li><a href="admin.php"><i class="fas fa-utensils"></i> <span>Quản lý Món ăn</span></a></li>
-                    <li><a href="#"><i class="fas fa-receipt"></i> <span>Quản lý Đơn hàng</span></a></li>
+                    <li><a href="admin_food.php"><i class="fas fa-utensils"></i> <span>Quản lý Món ăn</span></a></li>
+                    <li><a href="admin_order.php"><i class="fas fa-receipt"></i> <span>Quản lý Đơn hàng</span></a></li>
                     <li class="active"><a href="admin_users.php"><i class="fas fa-users"></i> <span>Quản lý Người dùng</span></a></li>
-                    <li><a href="#"><i class="fas fa-cog"></i> <span>Cài đặt</span></a></li>
+                    <li><a href="admin_transfer.php"><i class="fas fa-money-check-dollar"></i> <span>Quản lý Giao dịch</span></a></li>
                     <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> <span>Đăng xuất</span></a></li>
                 </ul>
             </nav>
@@ -419,7 +444,7 @@ try {
                     <button class="search-btn"><i class="fas fa-search"></i></button>
                     <div class="user-info">
                         <img src="placeholder-avatar.png" alt="Admin Avatar" class="avatar">
-                        <span><?php echo $admin_username; ?>!</span> <i class="fas fa-caret-down"></i>
+                        <span><?php echo $admin_username; ?></span> <i class="fas fa-caret-down"></i>
                         <div class="user-dropdown">
                             <a href="#">Hồ sơ</a>
                             <a href="logout.php">Đăng xuất</a>
@@ -436,6 +461,46 @@ try {
                          <button type="button" class="close-alert" onclick="this.parentElement.style.display='none';">×</button>
                     </div>
                 <?php endif; ?>
+
+                <!-- START: Dashboard Cards for Users -->
+                <div class="dashboard-cards">
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-users"></i></div>
+                        <div class="card-info">
+                            <h3><?php echo $total_users; ?></h3>
+                            <p>Tổng số người dùng</p>
+                        </div>
+                    </div>
+                    <!-- You could add more relevant cards here later if needed -->
+                    <!-- Example: Admins vs Customers counts -->
+                    <?php
+                        // Optional: Calculate admin/customer counts if needed for more cards
+                        $admin_user_count = 0;
+                        $customer_user_count = 0;
+                        foreach ($users as $user) {
+                            if ($user['role'] === 'admin') $admin_user_count++;
+                            else if ($user['role'] === 'customer') $customer_user_count++;
+                        }
+                    ?>
+                    
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-user-shield"></i></div>
+                        <div class="card-info">
+                            <h3><?php echo $admin_user_count; ?></h3>
+                            <p>Quản trị viên</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon"><i class="fas fa-user"></i></div>
+                        <div class="card-info">
+                            <h3><?php echo $customer_user_count; ?></h3>
+                            <p>Khách hàng</p>
+                        </div>
+                    </div>
+                    
+                </div>
+                <!-- END: Dashboard Cards for Users -->
+
 
                 <!-- User Data Table -->
                 <div class="data-table-container">
@@ -456,16 +521,28 @@ try {
                         <tbody id="user-table-body">
                             <?php if (empty($users)): ?>
                                 <tr>
+                                    <!-- Update colspan to 6 -->
                                     <td colspan="6" style="text-align:center; padding: 20px;">Không tìm thấy người dùng nào.</td>
                                 </tr>
                             <?php else: ?>
-                                <?php foreach ($users as $user): ?>
+                                <?php foreach ($users as $user):
+                                    // Determine if edit/delete should be disabled for this user
+                                    $is_current_user = ($user['id'] == $current_admin_id);
+                                    $is_last_admin = ($last_admin_check_needed && $user['role'] === 'admin');
+                                    $disable_delete = $is_current_user || $is_last_admin;
+                                    // Prepare data for the edit modal function call
+                                    $edit_modal_data = htmlspecialchars(json_encode([
+                                        'id' => $user['id'],
+                                        'username' => $user['username'],
+                                        'role' => $user['role']
+                                    ]), ENT_QUOTES, 'UTF-8');
+                                ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($user['id']); ?></td>
                                     <td><?php echo htmlspecialchars($user['username']); ?></td>
                                     <td><?php echo htmlspecialchars($user['email']); ?></td>
                                     <td><?php echo htmlspecialchars(ucfirst($user['role'])); ?></td>
-                                    <td><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($user['registration_date']))); ?></td>
+                                    <td><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($user['created_at']))); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>

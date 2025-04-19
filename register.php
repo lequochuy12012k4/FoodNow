@@ -13,7 +13,7 @@ $error_message = '';
 // --- Handle Standard Registration Form Submission ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Basic check to ensure it's the registration form being submitted
-    if (isset($_POST['new_username'], $_POST['new_password'], $_POST['email'], $_POST['fullname'], $_POST['confirm_password'])) {
+    if (isset($_POST['new_username'], $_POST['new_password'], $_POST['email'], $_POST['full_name'], $_POST['confirm_password'])) {
 
         $conn = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 
@@ -24,14 +24,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
              mysqli_set_charset($conn, "utf8mb4"); // Set charset
 
              // Use trim() directly without intermediate variables if preferred
-             $fullname = mysqli_real_escape_string($conn, trim($_POST['fullname']));
+             $full_name = mysqli_real_escape_string($conn, trim($_POST['full_name']));
              $email = mysqli_real_escape_string($conn, trim($_POST['email']));
              $username = mysqli_real_escape_string($conn, trim($_POST['new_username']));
              $password = trim($_POST['new_password']);
              $confirm_password = trim($_POST['confirm_password']);
 
              // --- Validation ---
-             if (empty($fullname) || empty($email) || empty($username) || empty($password) || empty($confirm_password)) {
+             if (empty($full_name) || empty($email) || empty($username) || empty($password) || empty($confirm_password)) {
                  $error_message = "Vui lòng điền đầy đủ tất cả các trường.";
              } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                  $error_message = "Định dạng email không hợp lệ.";
@@ -73,11 +73,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                          } else {
                               // --- Hash Password and Insert User ---
                               $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                              $sql_insert = "INSERT INTO users (fullname, email, username, password, role) VALUES (?, ?, ?, ?, 'user')"; // Default role 'user'
+                              $sql_insert = "INSERT INTO users (full_name, email, username, password, role) VALUES (?, ?, ?, ?, 'customer')"; // Default role 'user'
                               if ($stmt_insert = mysqli_prepare($conn, $sql_insert)) {
-                                  mysqli_stmt_bind_param($stmt_insert, "ssss", $param_fullname, $param_email_insert, $param_username_insert, $param_hashed_password);
+                                  mysqli_stmt_bind_param($stmt_insert, "ssss", $param_full_name, $param_email_insert, $param_username_insert, $param_hashed_password);
 
-                                  $param_fullname = $fullname;
+                                  $param_full_name = $full_name;
                                   $param_email_insert = $email;
                                   $param_username_insert = $username;
                                   $param_hashed_password = $hashed_password; // No role needed in bind if hardcoded
@@ -462,8 +462,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <!-- Add novalidate to rely on server-side validation first -->
             <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post" novalidate>
                 <div class="form-group">
-                    <label for="fullname">Họ và tên:</label>
-                    <input type="text" id="fullname" name="fullname" required value="<?php echo isset($_POST['fullname']) ? htmlspecialchars($_POST['fullname'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                    <label for="full_name">Họ và tên:</label>
+                    <input type="text" id="full_name" name="full_name" required value="<?php echo isset($_POST['full_name']) ? htmlspecialchars($_POST['full_name'], ENT_QUOTES, 'UTF-8') : ''; ?>">
                 </div>
                 <div class="form-group">
                     <label for="email">Email:</label>

@@ -873,3 +873,87 @@ table tbody td:nth-child(5) {
       margin: 0 auto;
     padding: 20px;
 }
+/* --- Redesigned Stats Cards --- */
+
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* Adjust min width as needed */
+    gap: 20px; /* Adjust gap */
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); /* Lighter shadow */
+    padding: 20px 25px; /* Adjust padding */
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.2s ease-out;
+    overflow: hidden;
+    border: 1px solid #f0f0f0; /* Very subtle border */
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Slightly enhance shadow on hover */
+}
+
+/* Style the Icon Directly */
+.stat-card > i { /* Target direct child i element */
+    flex-shrink: 0;
+    font-size: 2.5em; /* Adjust icon size */
+    width: 45px; /* Ensure space for icon, adjust as needed */
+    text-align: center; /* Center icon within its space */
+    margin-right: 20px; /* Space between icon and text */
+    /* Color will be set per card type below */
+}
+
+.stat-card .stat-content {
+    flex-grow: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.stat-card .stat-content h3 {
+    font-size: 1.4em; /* Adjust size */
+    font-weight: 600; /* Bold */
+    margin: 0 0 3px 0; /* Adjust spacing */
+    color: #333; /* Darker color */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stat-card .stat-content p {
+    font-size: 0.85em; /* Adjust size */
+    color: #777; /* Grey color */
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Specific Icon Colors (using colors similar to example) */
+.stat-card.card-food > i {
+    color: #E67E22; /* Orange */
+}
+
+.stat-card.card-value > i { /* Corresponds to "Đồ ăn chay" / fa-tags in example */
+    color: #D35400; /* Brownish-Orange */
+}
+
+.stat-card.card-rating > i { /* Corresponds to "Hamburger" / fa-star */
+    color: #C0392B; /* Darker Red/Brown */
+     /* If you still want the inline star yellow: */
+}
+.stat-card.card-rating .stat-content .star-inline {
+   color: #f39c12; /* Yellow for the inline star */
+   font-size: 0.9em;
+   vertical-align: baseline;
+}
+
+.stat-card.card-revenue > i { /* Corresponds to "VNĐ" / fa-coins */
+    color: #A0522D; /* Sienna / Brown */
+}

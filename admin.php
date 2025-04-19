@@ -1,6 +1,7 @@
 <?php
 // Ensure session is started
-include 'config/admin_config.php'; // Include database connection
+// Make sure this path is correct for your setup
+require_once 'config/admin_config.php'; // Use require_once for essential files
 
 // Check if user is logged in and is an admin
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_SESSION["role"]) || $_SESSION["role"] !== 'admin') {
@@ -10,57 +11,159 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_
 }
 
 // Get admin username for display
-$admin_username = htmlspecialchars($_SESSION["username"]);
-
-// --- START: FILTER LOGIC ---
-$filter_type = ''; // Default: show all types
-if (isset($_GET['filter_type']) && !empty($_GET['filter_type'])) {
-    $filter_type = trim($_GET['filter_type']);
-}
-
-// --- END: FILTER LOGIC ---
-
+$admin_username = htmlspecialchars($_SESSION["username"] ?? 'Admin'); // Default if not set
 
 // Define upload directory (adjust path as needed)
 $uploadDir = 'uploads/';
 if (!is_dir($uploadDir)) {
-    mkdir($uploadDir, 0777, true); // Create directory if it doesn't exist
+    // Attempt to create directory recursively with appropriate permissions
+    if (!mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+         // Log error or display a message if directory creation fails
+         error_log("Failed to create upload directory: " . $uploadDir);
+         // Optionally display an error message to the admin, but maybe not die
+    }
 }
-
 
 $message = '';
 $msg_type = '';
 
-// --- START: FETCH FOODS WITH FILTER ---
-// Base SQL query
-$sql = "SELECT id, name, type, price, rate, description, image FROM food_data";
+// --- START: FETCH FOOD STATS (Existing Logic) ---
+$sql_food = "SELECT id, name, type, price, rate, description, image FROM food_data ORDER BY id DESC";
+$foods = [];
+$total_food_items = 0;
+$most_frequent_type = 'N/A';
+$highest_rated_food_name = 'N/A';
+$total_food_value = 0; // Represents the sum of *prices* of all food items listed, not inventory value
+$highest_rate_so_far = -1;
 
-// Add filter condition if a type is selected
-if (!empty($filter_type)) {
-    $sql .= " WHERE type = ?"; // Use prepared statement placeholder
-}
-
-$sql .= " ORDER BY id DESC"; // Or any other ordering you prefer
-
-$stmt = $pdo->prepare($sql);
-
-// Bind the filter parameter if it exists
-if (!empty($filter_type)) {
-    $stmt->bindParam(1, $filter_type, PDO::PARAM_STR);
-}
-
-// Execute the query
 try {
-    $stmt->execute();
-    $foods = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt_food = $pdo->query($sql_food); // Simple query, no parameters needed here
+    $foods = $stmt_food->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!empty($foods)) {
+        $total_food_items = count($foods);
+        $type_counts = [];
+        $current_total_value = 0;
+
+        foreach ($foods as $food) {
+            // Count Types
+            $type = $food['type'] ?? 'Unknown';
+            $type_counts[$type] = ($type_counts[$type] ?? 0) + 1;
+
+            // Find Highest Rated Food
+            $current_rate = isset($food['rate']) ? (int)$food['rate'] : -1;
+            if ($current_rate > $highest_rate_so_far) {
+                $highest_rate_so_far = $current_rate;
+                $highest_rated_food_name = $food['name'] ?? 'Unknown Name';
+            } elseif ($current_rate === $highest_rate_so_far && $highest_rated_food_name === 'N/A') {
+                 $highest_rated_food_name = $food['name'] ?? 'Unknown Name';
+            }
+
+            // Calculate Total Value (Sum of listed prices)
+            $price = isset($food['price']) ? filter_var($food['price'], FILTER_VALIDATE_FLOAT) : 0;
+            if ($price !== false) {
+                 $current_total_value += $price;
+            }
+        }
+
+        if (!empty($type_counts)) {
+            arsort($type_counts);
+            $most_frequent_type = key($type_counts);
+        }
+
+        $total_food_value = $current_total_value;
+
+        if ($highest_rate_so_far === -1 && $total_food_items > 0) {
+            $highest_rated_food_name = 'Chưa có đánh giá';
+        } elseif ($total_food_items === 0) {
+             $highest_rated_food_name = 'Không có món ăn';
+        }
+    }
+
 } catch (PDOException $e) {
-    // Handle potential database errors
-    $foods = []; // Set to empty array on error
     $message = "Lỗi khi truy vấn món ăn: " . $e->getMessage();
     $msg_type = "danger";
-    // Log the error for debugging: error_log("Database Error: " . $e->getMessage());
+    error_log("Database Error (Food Fetch): " . $e->getMessage());
 }
-// --- END: FETCH FOODS WITH FILTER ---
+// --- END: FETCH FOOD STATS ---
+
+
+// --- START: FETCH MONTHLY STATS ---
+$monthly_revenue = 0;
+$total_items_ordered_month = 0;
+$monthly_cost_estimated = 0;
+$monthly_profit_estimated = 0;
+
+// Define the start and end dates for the current month
+$start_date = date('Y-m-01 00:00:00');
+$end_date = date('Y-m-t 23:59:59'); // 't' gives the last day of the month
+
+// **IMPORTANT**: Define the status that counts towards revenue (e.g., 'completed', 'delivered')
+$revenue_generating_status = 'completed'; // Adjust as needed
+
+// 1. Calculate Monthly Revenue (from completed orders)
+$sql_revenue = "SELECT SUM(total_amount) as total_revenue
+                FROM orders
+                WHERE order_date BETWEEN :start_date AND :end_date
+                  AND status = :status"; // Filter by status
+
+try {
+    $stmt_revenue = $pdo->prepare($sql_revenue);
+    $stmt_revenue->bindParam(':start_date', $start_date, PDO::PARAM_STR);
+    $stmt_revenue->bindParam(':end_date', $end_date, PDO::PARAM_STR);
+    $stmt_revenue->bindParam(':status', $revenue_generating_status, PDO::PARAM_STR);
+    $stmt_revenue->execute();
+    $result_revenue = $stmt_revenue->fetch(PDO::FETCH_ASSOC);
+    if ($result_revenue && $result_revenue['total_revenue'] !== null) {
+        $monthly_revenue = (float)$result_revenue['total_revenue'];
+    }
+} catch (PDOException $e) {
+    $message .= "<br>Lỗi khi tính doanh thu tháng: " . $e->getMessage(); // Append message
+    $msg_type = "danger";
+    error_log("Database Error (Monthly Revenue): " . $e->getMessage());
+    // monthly_revenue remains 0
+}
+
+// 2. Calculate Total Items Ordered This Month (from completed orders)
+// Assumes an 'order_items' table exists with 'order_id' and 'quantity'
+$sql_items = "SELECT SUM(oi.quantity) as total_items
+              FROM order_items oi
+              JOIN orders o ON oi.order_id = o.id
+              WHERE o.order_date BETWEEN :start_date AND :end_date
+                AND o.status = :status"; // Ensure items are from completed orders
+
+try {
+    $stmt_items = $pdo->prepare($sql_items);
+    $stmt_items->bindParam(':start_date', $start_date, PDO::PARAM_STR);
+    $stmt_items->bindParam(':end_date', $end_date, PDO::PARAM_STR);
+    $stmt_items->bindParam(':status', $revenue_generating_status, PDO::PARAM_STR);
+    $stmt_items->execute();
+    $result_items = $stmt_items->fetch(PDO::FETCH_ASSOC);
+    if ($result_items && $result_items['total_items'] !== null) {
+        $total_items_ordered_month = (int)$result_items['total_items'];
+    }
+} catch (PDOException $e) {
+    // Check if the error is due to the table not existing
+    if (strpos($e->getMessage(), 'order_items') !== false) {
+         $message .= "<br>Lưu ý: Bảng 'order_items' không tồn tại hoặc có lỗi. Không thể tính số lượng món đã đặt.";
+         error_log("Database Warning/Error (Monthly Items): Table 'order_items' likely missing or query failed - " . $e->getMessage());
+    } else {
+        $message .= "<br>Lỗi khi tính số lượng món đã đặt: " . $e->getMessage(); // Append message
+        error_log("Database Error (Monthly Items): " . $e->getMessage());
+    }
+    $msg_type = "warning"; // Use warning if it might be a missing table
+     // total_items_ordered_month remains 0
+}
+
+
+// 3. Estimate Monthly Cost and Profit
+// **ESTIMATION**: Assume cost is 40% of revenue. Adjust this factor as needed.
+$cost_factor = 0.40;
+if ($monthly_revenue > 0) {
+    $monthly_cost_estimated = $monthly_revenue * $cost_factor;
+    $monthly_profit_estimated = $monthly_revenue - $monthly_cost_estimated;
+}
+// --- END: FETCH MONTHLY STATS ---
 
 ?>
 <!DOCTYPE html>
@@ -69,7 +172,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoodNow Admin - Quản lý Món ăn</title>
+    <title>FoodNow Admin - Tổng quan</title>
     <!-- Link to your CSS file -->
     <link rel="stylesheet" href="css/admin.css">
     <!-- Font Awesome -->
@@ -78,8 +181,91 @@ try {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- jQuery -->
+    <!-- jQuery (ensure it's loaded before your script) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <style>
+        /* Add some basic styling for the stat cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Responsive grid */
+            gap: 20px; /* Space between cards */
+            margin-bottom: 30px; /* Space below the grid */
+        }
+
+        .stat-card {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px; /* Space between icon and text */
+        }
+
+        .stat-card .icon {
+            font-size: 2rem; /* Adjust icon size */
+            color: #5c67f2; /* Example icon color */
+            padding: 10px;
+             background-color: rgba(92, 103, 242, 0.1); /* Light background for icon */
+            border-radius: 50%;
+             width: 50px; /* Fixed width */
+            height: 50px; /* Fixed height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+         .stat-card .icon.revenue { color: #28a745; background-color: rgba(40, 167, 69, 0.1); }
+         .stat-card .icon.cost { color: #dc3545; background-color: rgba(220, 53, 69, 0.1); }
+         .stat-card .icon.profit { color: #17a2b8; background-color: rgba(23, 162, 184, 0.1); }
+         .stat-card .icon.items-ordered { color: #ffc107; background-color: rgba(255, 193, 7, 0.1); }
+         .stat-card .icon.total-food { color: #6f42c1; background-color: rgba(111, 66, 193, 0.1); }
+         .stat-card .icon.frequent-type { color: #fd7e14; background-color: rgba(253, 126, 20, 0.1); }
+         .stat-card .icon.highest-rated { color: #e83e8c; background-color: rgba(232, 62, 140, 0.1); }
+
+
+        .stat-card .info h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.5rem; /* Main stat value size */
+            font-weight: 600;
+            color: #333;
+        }
+
+        .stat-card .info p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Alert Message Styling */
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .alert-warning {
+             color: #856404;
+             background-color: #fff3cd;
+             border-color: #ffeeba;
+        }
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+
+    </style>
 </head>
 
 <body>
@@ -91,12 +277,12 @@ try {
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li><a href="admin.php"><i class="fas fa-tachometer-alt"></i><span>Tổng quan</span></a></li>
-                    <!-- Make the current page active -->
-                    <li class="active"><a href="admin.php"><i class="fas fa-utensils"></i> <span>Quản lý Món ăn</span></a></li>
-                    <li><a href="#"><i class="fas fa-receipt"></i> <span>Quản lý Đơn hàng</span></a></li>
+                    <!-- Highlight the current page -->
+                    <li class="active"><a href="admin.php"><i class="fas fa-tachometer-alt"></i><span>Tổng quan</span></a></li>
+                    <li><a href="admin_food.php"><i class="fas fa-utensils"></i> <span>Quản lý Món ăn</span></a></li>
+                    <li><a href="admin_order.php"><i class="fas fa-receipt"></i> <span>Quản lý Đơn hàng</span></a></li>
                     <li><a href="admin_users.php"><i class="fas fa-users"></i> <span>Quản lý Người dùng</span></a></li>
-                    <li><a href="#"><i class="fas fa-cog"></i> <span>Cài đặt</span></a></li>
+                     <li><a href="admin_transfer.php"><i class="fas fa-money-check-dollar"></i> <span>Quản lý Giao dịch</span></a></li>
                     <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> <span>Đăng xuất</span></a></li>
                 </ul>
             </nav>
@@ -106,386 +292,146 @@ try {
         <main class="main-content">
             <header class="main-header">
                 <div class="header-title">
-                    <button class="header-menu-toggle" aria-label="Toggle Sidebar">
+                     <button class="header-menu-toggle" aria-label="Toggle Sidebar">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1>Quản lý Món ăn</h1>
+                    <h1>Tổng quan</h1>
                 </div>
                 <div class="header-user">
-                    <input type="search" id="admin-search-food" placeholder="Tìm kiếm món ăn..." autocomplete="off">
-                    <button class="search-btn"><i class="fas fa-search"></i></button>
                     <div class="user-info">
+                        <!-- Placeholder - replace with dynamic avatar if available -->
                         <img src="placeholder-avatar.png" alt="Admin Avatar" class="avatar">
-                        <span><?php echo $admin_username; ?>!</span> <i class="fas fa-caret-down"></i>
+                        <span><?php echo $admin_username; ?></span> <i class="fas fa-caret-down"></i>
                         <div class="user-dropdown">
-                            <a href="#">Hồ sơ</a>
+                            <a href="#">Hồ sơ</a> <!-- Link to profile page if exists -->
                             <a href="logout.php">Đăng xuất</a>
                         </div>
                     </div>
                 </div>
             </header>
 
-            <section class="content-area">
-                <?php if (!empty($message)): ?>
-                    <div class="alert alert-<?php echo htmlspecialchars($msg_type); ?>" role="alert">
-                        <?php echo htmlspecialchars($message); ?>
-                    </div>
-                <?php endif; ?>
+            <!-- Display messages if any -->
+            <?php if (!empty($message)): ?>
+                <div class="alert alert-<?php echo $msg_type ?: 'info'; ?>">
+                    <?php echo nl2br($message); // Use nl2br to respect newlines in messages ?>
+                </div>
+            <?php endif; ?>
 
-                <div class="dashboard-cards">
-                    <!-- Dashboard Cards remain the same -->
-                    <div class="card">
-                        <div class="card-icon"><i class="fas fa-utensils"></i></div>
-                        <div class="card-info">
-                            <h3>150</h3> <p>Món ăn</p>
+
+            <!-- Statistics Section -->
+            <section class="stats-section">
+                <h2>Thống kê tháng này (<?php echo date('m/Y'); ?>)</h2>
+                <div class="stats-grid">
+                    <!-- Monthly Revenue -->
+                    <div class="stat-card">
+                        <div class="icon revenue"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="info">
+                             <h3><span class="currency"><?php echo number_format($monthly_revenue, 0, ',', '.'); ?> đ</span></h3>
+                            <p>Doanh thu (Đơn hoàn thành)</p>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-icon"><i class="fas fa-receipt"></i></div>
-                        <div class="card-info">
-                            <h3>58</h3> <p>Đơn hàng hôm nay</p>
+
+                    <!-- Estimated Monthly Cost -->
+                    <div class="stat-card">
+                        <div class="icon cost"><i class="fas fa-file-invoice-dollar"></i></div>
+                        <div class="info">
+                             <h3><span class="currency"><?php echo number_format($monthly_cost_estimated, 0, ',', '.'); ?> đ</span></h3>
+                             <p>Chi phí (Ước tính <?php echo ($cost_factor * 100); ?>%)</p>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-icon"><i class="fas fa-users"></i></div>
-                        <div class="card-info">
-                            <h3>1200</h3> <p>Người dùng</p>
+
+                     <!-- Estimated Monthly Profit -->
+                    <div class="stat-card">
+                        <div class="icon profit"><i class="fas fa-chart-line"></i></div>
+                        <div class="info">
+                             <h3><span class="currency"><?php echo number_format($monthly_profit_estimated, 0, ',', '.'); ?> đ</span></h3>
+                            <p>Lợi nhuận (Ước tính)</p>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-icon"><i class="fas fa-dollar-sign"></i></div>
-                        <div class="card-info">
-                            <h3>$5,678</h3> <p>Doanh thu (Tháng)</p>
+
+                     <!-- Total Items Ordered -->
+                    <div class="stat-card">
+                        <div class="icon items-ordered"><i class="fas fa-shopping-basket"></i></div>
+                        <div class="info">
+                            <h3><?php echo number_format($total_items_ordered_month); ?></h3>
+                            <p>Món đã đặt (Đơn hoàn thành)</p>
                         </div>
                     </div>
                 </div>
-
-                <!-- Data Table -->
-                <div class="data-table-container">
-                    <div class="table-controls" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
-                        <h2>Danh sách Món ăn</h2>
-
-                        <!-- --- START: FILTER FORM --- -->
-                        <form action="admin.php" method="get" id="filter-form" style="display: flex; align-items: center; gap: 10px;">
-                            <label for="food-type-filter" style="margin-bottom: 0;">Lọc theo loại:</label>
-                            <select name="filter_type" id="food-type-filter" onchange="this.form.submit()" style="padding: 5px 8px; border-radius: 4px; border: 1px solid #ccc;">
-                                <option value="">-- Tất cả loại --</option>
-                                <?php
-                                // Define food types (same as in the modal)
-                                $food_types = ["Món khai vị", "Món chính", "Tráng miệng", "Nước uống", "Bánh ngọt", "Đồ ăn nhanh", "Đồ ăn chay", "Trái cây"];
-                                foreach ($food_types as $type_option) {
-                                    // Check if this option should be selected
-                                    $selected = ($filter_type === $type_option) ? ' selected' : '';
-                                    echo '<option value="' . htmlspecialchars($type_option) . '"' . $selected . '>' . htmlspecialchars($type_option) . '</option>';
-                                }
-                                ?>
-                            </select>
-                            <?php /* Optional: Keep a hidden submit button for non-JS users or remove if relying solely on onchange
-                            <button type="submit" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.9em;">
-                                <i class="fas fa-filter"></i> Lọc
-                            </button>
-                             */ ?>
-                        </form>
-                        <!-- --- END: FILTER FORM --- -->
-
-
-                        <button class="btn btn-primary add-button" id="show-add-modal-btn">
-                            <i class="fas fa-plus"></i> Thêm Món ăn
-                        </button>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Tên món ăn</th>
-                                <th>Loại</th>
-                                <th>Giá (VNĐ)</th>
-                                <th>Đánh giá</th>
-                                <th style="text-align: center;">Ảnh</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="food-table-body">
-                            <?php if (empty($foods)): ?>
-                                <tr>
-                                    <td colspan="7" style="text-align:center; padding: 20px;">
-                                        <?php echo !empty($filter_type) ? 'Không tìm thấy món ăn nào thuộc loại "' . htmlspecialchars($filter_type) . '".' : 'Chưa có món ăn nào.'; ?>
-                                    </td>
-                                </tr>
-                            <?php else: ?>
-                                <?php foreach ($foods as $food): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($food['id']); ?></td>
-                                        <td><?php echo htmlspecialchars($food['name']); ?></td>
-                                        <td><?php echo htmlspecialchars($food['type']); ?></td>
-                                        <td><?php echo number_format($food['price'], 0, ',', '.'); ?></td>
-                                        <td style="text-align: center; white-space: nowrap; padding: 25px 0px;">
-                                            <?php
-                                            $rate = isset($food['rate']) ? (int)$food['rate'] : 0; // Ensure rate is numeric
-                                            $rate = max(0, min(5, $rate)); // Clamp between 0 and 5
-                                            echo str_repeat('⭐', $rate) . str_repeat('☆', 5 - $rate); // Use filled and empty stars
-                                            ?>
-                                            (<?php echo htmlspecialchars($rate); ?>)
-                                        </td>
-                                        <td style="text-align: center; vertical-align: middle;">
-                                            <?php if (!empty($food['image']) && file_exists($uploadDir . $food['image'])): ?>
-                                                <img src="<?php echo $uploadDir . htmlspecialchars($food['image']); ?>"
-                                                    alt="<?php echo htmlspecialchars($food['name']); ?>"
-                                                    class="table-food-image">
-                                            <?php else: ?>
-                                                <span style="font-size: 0.8em; color: #888;">(Chưa có ảnh)</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="actions" style="white-space: nowrap;">
-                                            <button class="btn btn-edit"
-                                                onclick="openEditModal(<?php echo htmlspecialchars(json_encode($food), ENT_QUOTES, 'UTF-8'); ?>)">
-                                                <i class="fas fa-edit"></i> Sửa
-                                            </button>
-                                            <?php
-                                                // Append filter type to delete URL if active
-                                                $delete_url = 'admin.php?action=delete&id=' . $food['id'];
-                                                if (!empty($filter_type)) {
-                                                    $delete_url .= '&filter_type=' . urlencode($filter_type);
-                                                }
-                                            ?>
-                                            <a href="<?php echo $delete_url; ?>"
-                                                class="btn btn-delete"
-                                                onclick="return confirm('Bạn có chắc chắn muốn xóa món ăn: \'<?php echo htmlspecialchars(addslashes($food['name']), ENT_QUOTES); ?>\'?\nHành động này không thể hoàn tác.');">
-                                                <i class="fas fa-trash-alt"></i> Xóa
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-
             </section>
+
+            <section class="stats-section">
+                 <h2>Thống kê Món ăn Chung</h2>
+                 <div class="stats-grid">
+                    <!-- Total Food Items -->
+                    <div class="stat-card">
+                        <div class="icon total-food"><i class="fas fa-utensils"></i></div>
+                        <div class="info">
+                            <h3><?php echo $total_food_items; ?></h3>
+                            <p>Tổng số món ăn</p>
+                        </div>
+                    </div>
+
+                    <!-- Most Frequent Type -->
+                     <div class="stat-card">
+                        <div class="icon frequent-type"><i class="fas fa-tags"></i></div>
+                        <div class="info">
+                             <h3><?php echo htmlspecialchars($most_frequent_type); ?></h3>
+                            <p>Loại phổ biến nhất</p>
+                        </div>
+                    </div>
+
+                     <!-- Highest Rated Food -->
+                     <div class="stat-card">
+                        <div class="icon highest-rated"><i class="fas fa-star"></i></div>
+                        <div class="info">
+                            <h3><?php echo htmlspecialchars($highest_rated_food_name); ?></h3>
+                            <p>Đánh giá cao nhất (<?php echo $highest_rate_so_far > 0 ? $highest_rate_so_far . '/5' : 'N/A'; ?>)</p>
+                        </div>
+                    </div>
+
+                     <!-- Total Food Value (Sum of Prices) -->
+                     <!-- Optional: You might want this or not -->
+                     <!--
+                     <div class="stat-card">
+                         <div class="icon"><i class="fas fa-coins"></i></div>
+                         <div class="info">
+                              <h3><span class="currency"><?php echo number_format($total_food_value, 0, ',', '.'); ?> đ</span></h3>
+                             <p>Tổng giá trị món ăn (Giá bán)</p>
+                         </div>
+                     </div>
+                     -->
+                 </div>
+            </section>
+
+             <!-- Maybe add more content sections here like recent orders, user activity etc. -->
+
         </main>
     </div>
-
-    <!-- Add/Edit Item Modal -->
-    <div id="add-item-modal" class="modal">
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
-            <button class="modal-close" id="close-modal-btn">×</button>
-            <h2 id="modal-title">Thêm Món ăn mới</h2>
-            <div id="add-item-form-message" class="alert" style="display: none; margin-bottom: 15px;"></div>
-
-             <!-- Make sure the form submits back preserving filter if needed -->
-             <form id="add-item-form" action="admin.php<?php echo !empty($filter_type) ? '?filter_type=' . urlencode($filter_type) : ''; ?>" method="post" enctype="multipart/form-data">
-                <input type="hidden" id="form-action" name="action" value="add">
-                <input type="hidden" id="edit-item-id" name="id" value="">
-                <input type="hidden" id="current-image-filename" name="current_image" value="">
-                <!-- Optional: Add hidden field to preserve filter on form submission if JS fails or for complex cases -->
-                <?php if (!empty($filter_type)): ?>
-                    <input type="hidden" name="filter_type" value="<?php echo htmlspecialchars($filter_type); ?>">
-                <?php endif; ?>
-
-
-                <div class="form-group">
-                    <label for="item-name">Tên món ăn:</label>
-                    <input type="text" id="item-name" name="name" placeholder="Ví dụ: Phở Bò Tái" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="item-type">Loại món ăn:</label>
-                    <select id="item-type" name="type" required>
-                        <option value="" disabled selected>-- Chọn loại món ăn --</option>
-                        <?php
-                         // Re-use the food types array
-                        foreach ($food_types as $type_option) {
-                            echo '<option value="' . htmlspecialchars($type_option) . '">' . htmlspecialchars($type_option) . '</option>';
-                        }
-                        ?>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="item-price">Giá (VNĐ):</label>
-                    <!-- Using type="number" is better for numeric input, but text with pattern allows easier formatting potentially -->
-                    <input type="number" id="item-price" name="price" placeholder="Ví dụ: 50000" required min="0" step="1000">
-                    <!-- OR -->
-                    <!-- <input type="text" id="item-price" name="price" placeholder="Ví dụ: 50000" required inputmode="numeric" pattern="[0-9]*"> -->
-                </div>
-
-                <div class="form-group">
-                    <label for="item-rating">Đánh giá (0-5):</label>
-                    <select id="item-rating" name="rate" required>
-                        <option value="" disabled selected>-- Chọn đánh giá --</option>
-                        <option value="5">5 ⭐⭐⭐⭐⭐</option>
-                        <option value="4">4 ⭐⭐⭐⭐</option>
-                        <option value="3">3 ⭐⭐⭐</option>
-                        <option value="2">2 ⭐⭐</option>
-                        <option value="1">1 ⭐</option>
-                        <option value="0">0 (Chưa đánh giá)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="item-description">Miêu tả:</label>
-                    <textarea id="item-description" name="description" placeholder="Miêu tả ngắn gọn về món ăn..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="item-image">Ảnh món ăn (Để trống nếu không đổi ảnh khi sửa):</label>
-                    <input type="file" id="item-image" name="image" accept="image/png, image/jpeg, image/gif, image/webp"> <!-- Added webp -->
-                    <div id="current-image-preview" style="margin-top: 10px; font-size: 0.9em; color: #555;"></div>
-                </div>
-
-                <button type="submit" class="btn btn-primary modal-submit-btn" id="modal-submit-button">
-                    <i class="fas fa-check"></i> <span id="modal-submit-button-text">Thêm món ăn</span>
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Link to your JS file -->
-    <script src="js/admin.js"></script>
+    <script src="js/admin.js"></script> <!-- Your existing JS -->
     <script>
-        // Optional: Enhance search to work alongside filters (basic example)
-        // If your admin.js handles search via AJAX, you might need to pass the
-        // current filter value along with the search term.
-        // Example modification (assuming jQuery AJAX in admin.js):
-        /*
-        $('#admin-search-food').on('keyup', function() {
-            let searchTerm = $(this).val();
-            let filterType = $('#food-type-filter').val(); // Get current filter
+        // Add specific JS for this page if needed, e.g., handling the user dropdown
+        $(document).ready(function() {
+            $('.user-info').on('click', function(e) {
+                 // Prevent dropdown closing if clicking inside it (optional)
+                // if ($(e.target).closest('.user-dropdown').length) {
+                //     return;
+                // }
+                $('.user-dropdown').toggle();
+            });
 
-            $.ajax({
-                url: 'search_food_endpoint.php', // Your backend search handler
-                method: 'GET',
-                data: {
-                    search: searchTerm,
-                    filter_type: filterType // Send filter along
-                },
-                success: function(response) {
-                    $('#food-table-body').html(response); // Update table body
-                },
-                error: function() {
-                    // Handle error
-                    $('#food-table-body').html('<tr><td colspan="7">Lỗi khi tìm kiếm.</td></tr>');
+            // Close dropdown if clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.user-info').length) {
+                    $('.user-dropdown').hide();
                 }
             });
+
+            // Sidebar toggle logic (if not already in admin.js)
+            $('.header-menu-toggle').on('click', function() {
+                 $('.admin-container').toggleClass('sidebar-collapsed');
+            });
         });
-        */
-
-       // Handle sidebar toggle persistence if needed (using localStorage)
-       const sidebar = document.querySelector('.sidebar');
-       const mainContent = document.querySelector('.main-content');
-       const toggleButton = document.querySelector('.header-menu-toggle');
-
-       const isSidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-
-       if (isSidebarCollapsed) {
-           document.body.classList.add('sidebar-collapsed');
-       }
-
-       toggleButton.addEventListener('click', () => {
-           document.body.classList.toggle('sidebar-collapsed');
-           localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
-       });
-
-
-       // Make dropdown work better on click/touch
-       const userInfo = document.querySelector('.header-user .user-info');
-       if (userInfo) {
-           userInfo.addEventListener('click', function(event) {
-               // Prevent dropdown from closing if click is inside dropdown
-               if (event.target.closest('.user-dropdown')) {
-                   return;
-               }
-               this.classList.toggle('active');
-           });
-           // Close dropdown if clicked outside
-           document.addEventListener('click', function(event) {
-               if (!userInfo.contains(event.target)) {
-                   userInfo.classList.remove('active');
-               }
-           });
-       }
-
-
-        // --- Add/Edit Modal Logic (from admin.js or similar) ---
-        const modal = document.getElementById('add-item-modal');
-        const showModalBtn = document.getElementById('show-add-modal-btn');
-        const closeModalBtn = document.getElementById('close-modal-btn');
-        const overlay = modal.querySelector('.modal-overlay');
-        const form = document.getElementById('add-item-form');
-        const modalTitle = document.getElementById('modal-title');
-        const formActionInput = document.getElementById('form-action');
-        const editItemIdInput = document.getElementById('edit-item-id');
-        const modalSubmitButtonText = document.getElementById('modal-submit-button-text');
-        const currentImagePreview = document.getElementById('current-image-preview');
-        const currentImageFilenameInput = document.getElementById('current-image-filename');
-        const formMessageDiv = document.getElementById('add-item-form-message');
-
-
-        function openModal() {
-            form.reset(); // Clear previous data
-            modalTitle.textContent = 'Thêm Món ăn mới';
-            formActionInput.value = 'add';
-            editItemIdInput.value = '';
-            modalSubmitButtonText.textContent = 'Thêm món ăn';
-            currentImagePreview.innerHTML = ''; // Clear image preview
-            currentImageFilenameInput.value = '';
-            formMessageDiv.style.display = 'none'; // Hide message div
-            modal.style.display = 'flex';
-        }
-
-        function closeModal() {
-            modal.style.display = 'none';
-        }
-
-        function openEditModal(foodItem) {
-            form.reset(); // Clear previous data first
-            modalTitle.textContent = 'Sửa thông tin Món ăn';
-            formActionInput.value = 'edit';
-            editItemIdInput.value = foodItem.id;
-            modalSubmitButtonText.textContent = 'Cập nhật món ăn';
-            formMessageDiv.style.display = 'none'; // Hide message div
-
-            // Populate form fields
-            document.getElementById('item-name').value = foodItem.name || '';
-            document.getElementById('item-type').value = foodItem.type || '';
-            document.getElementById('item-price').value = foodItem.price || '';
-            document.getElementById('item-rating').value = foodItem.rate !== null ? foodItem.rate : ''; // Handle null rate
-            document.getElementById('item-description').value = foodItem.description || '';
-             currentImageFilenameInput.value = foodItem.image || ''; // Store current image filename
-
-            // Display current image info
-            if (foodItem.image) {
-                // Adjust the path prefix as needed for display
-                const imagePath = '<?php echo $uploadDir; ?>' + foodItem.image;
-                currentImagePreview.innerHTML = `Ảnh hiện tại: <img src="${imagePath}" alt="Current Image" style="max-height: 50px; vertical-align: middle; margin-left: 10px;">`;
-            } else {
-                currentImagePreview.innerHTML = 'Chưa có ảnh.';
-            }
-
-
-            modal.style.display = 'flex';
-        }
-
-        // Event Listeners
-        if (showModalBtn) {
-            showModalBtn.addEventListener('click', openModal);
-        }
-        if(closeModalBtn) {
-            closeModalBtn.addEventListener('click', closeModal);
-        }
-        if (overlay) {
-            overlay.addEventListener('click', closeModal);
-        }
-
-        // Close modal with Escape key
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && modal.style.display === 'flex') {
-                closeModal();
-            }
-        });
-
-
     </script>
 
 </body>

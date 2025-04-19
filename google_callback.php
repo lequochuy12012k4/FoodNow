@@ -53,11 +53,11 @@ if (isset($_GET['code'])) {
 
         $google_id = $google_account_info->getId();
         $email = $google_account_info->getEmail();
-        $fullname = $google_account_info->getName();
+        $full_name = $google_account_info->getName();
         // $picture = $google_account_info->getPicture(); // Optional: Store profile picture URL if needed
 
         // --- Check if user exists in Database based on email ---
-        $sql_check = "SELECT id, username, fullname, role FROM users WHERE email = ?";
+        $sql_check = "SELECT id, username, full_name, role FROM users WHERE email = ?";
         if ($stmt_check = mysqli_prepare($conn, $sql_check)) {
             mysqli_stmt_bind_param($stmt_check, "s", $email);
             if (mysqli_stmt_execute($stmt_check)) {
@@ -65,7 +65,7 @@ if (isset($_GET['code'])) {
 
                 if (mysqli_stmt_num_rows($stmt_check) == 1) {
                     // --- User Exists ---
-                    mysqli_stmt_bind_result($stmt_check, $db_id, $db_username, $db_fullname, $db_role);
+                    mysqli_stmt_bind_result($stmt_check, $db_id, $db_username, $db_full_name, $db_role);
                     mysqli_stmt_fetch($stmt_check);
                     mysqli_stmt_close($stmt_check); // Close check statement
 
@@ -81,7 +81,7 @@ if (isset($_GET['code'])) {
                     $_SESSION["loggedin"] = true;
                     $_SESSION["user_id"] = $db_id;
                     $_SESSION["username"] = $db_username; // Keep original username
-                    $_SESSION["fullname"] = $db_fullname; // Keep original fullname
+                    $_SESSION["full_name"] = $db_full_name; // Keep original full_name
                     $_SESSION["role"] = $db_role;
 
                     // --- Redirect based on role ---
@@ -102,9 +102,9 @@ if (isset($_GET['code'])) {
                     $new_username = $email;
                     $new_role = 'user'; // Default role for new Google signups
 
-                    $sql_insert = "INSERT INTO users (username, fullname, email, google_id, role, password) VALUES (?, ?, ?, ?, ?, NULL)";
+                    $sql_insert = "INSERT INTO users (username, full_name, email, google_id, role, password) VALUES (?, ?, ?, ?, ?, NULL)";
                     if ($stmt_insert = mysqli_prepare($conn, $sql_insert)) {
-                        mysqli_stmt_bind_param($stmt_insert, "sssss", $new_username, $fullname, $email, $google_id, $new_role);
+                        mysqli_stmt_bind_param($stmt_insert, "sssss", $new_username, $full_name, $email, $google_id, $new_role);
 
                         if (mysqli_stmt_execute($stmt_insert)) {
                             $new_user_id = mysqli_insert_id($conn);
@@ -113,7 +113,7 @@ if (isset($_GET['code'])) {
                             $_SESSION["loggedin"] = true;
                             $_SESSION["user_id"] = $new_user_id;
                             $_SESSION["username"] = $new_username;
-                            $_SESSION["fullname"] = $fullname;
+                            $_SESSION["full_name"] = $full_name;
                             $_SESSION["role"] = $new_role;
 
                             mysqli_stmt_close($stmt_insert); // Close insert statement

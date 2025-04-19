@@ -289,7 +289,6 @@ $(function () { // Use jQuery's ready function
 
     } else {
         // This case means the PHP block didn't run correctly or didn't define the variable
-        console.error("Autocomplete data (availableFoodsFromPHP) is missing or not an array. Check PHP execution and the inline script in the HTML source. Autocomplete disabled.");
         // Optionally disable the input or show a different placeholder
          $("#searchfoods").prop('disabled', true).attr('placeholder', 'Search unavailable');
     }
@@ -377,7 +376,7 @@ $(document).ready(function() {
     }
 
     // Event listeners for modal
- z
+
     closeModalBtn.on('click', closeModal);
     overlay.on('click', closeModal);
 

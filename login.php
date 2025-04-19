@@ -39,7 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
              // Set charset
             mysqli_set_charset($conn, "utf8mb4");
 
-            $sql = "SELECT id, username, fullname, role, password FROM users WHERE username = ?";
+            $sql = "SELECT id, username, full_name, role, password FROM users WHERE username = ?";
 
             if ($stmt = mysqli_prepare($conn, $sql)) {
                 mysqli_stmt_bind_param($stmt, "s", $param_username);
@@ -49,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     mysqli_stmt_store_result($stmt);
 
                     if (mysqli_stmt_num_rows($stmt) == 1) {
-                        mysqli_stmt_bind_result($stmt, $db_id, $db_username, $db_fullname, $db_role, $hashed_password);
+                        mysqli_stmt_bind_result($stmt, $db_id, $db_username, $db_full_name, $db_role, $hashed_password);
 
                         if (mysqli_stmt_fetch($stmt)) {
                             // Verify password - Check if password exists and then verify
@@ -58,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 $_SESSION["loggedin"] = true;
                                 $_SESSION["id"] = $db_id;
                                 $_SESSION["username"] = $db_username;
-                                $_SESSION["fullname"] = $db_fullname;
+                                $_SESSION["full_name"] = $db_full_name;
                                 $_SESSION["role"] = $db_role;
 
                                 mysqli_stmt_close($stmt);

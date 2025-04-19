@@ -59,7 +59,7 @@ if (session_status() == PHP_SESSION_NONE) {
         <?php ?>
         <?php if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true): ?>
             <?php
-            $displayName = $_SESSION['fullname'];
+            $displayName = $_SESSION['full_name'];
             ?>
             <div class="account-menu">
                 <button class="account-trigger">

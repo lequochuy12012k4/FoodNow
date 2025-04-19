@@ -46,9 +46,9 @@ include 'parts/header.php';
                 while ($row = $result->fetch_assoc()) {
                     $category = !empty($row["type"]) ? htmlspecialchars($row["type"]) : 'main';
                     $detailPageLink = "food_detail.php?id=" . htmlspecialchars($row["id"]);
-
+                    
                     echo "<div class='food-item' data-category='" . $category . "'>"; // Không cần class 'food-item-all' nữa
-
+                    echo "<a href='" . $detailPageLink . "'>";
                     // --- IMAGE PATH CORRECTION (Giữ nguyên) ---
                     $imageFilename = $row["image"];
                     $placeholderPath = 'image/placeholder_food.png';
@@ -64,7 +64,7 @@ include 'parts/header.php';
                     }
                     // --- END IMAGE PATH CORRECTION ---
 
-                    echo "<a href='" . $detailPageLink . "'>";
+
                     echo "<img src='" . $imageDisplay . "' alt='" . htmlspecialchars($row["name"]) . "'>";
                     echo "<h3>" . htmlspecialchars($row["name"]) . "</h3>";
                     echo "<h5>" . htmlspecialchars($row["type"]) . "</h5>";

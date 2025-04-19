@@ -170,7 +170,7 @@ function get_image_path(?string $imageFilename, string $uploadDir, string $webUp
                     <label for="quantity-<?php echo $food['id']; ?>">Số lượng:</label>
                     <div class="quantity-controls">
                         <button type="button" class="quantity-button" data-action="decrease" data-target="quantity-<?php echo $food['id']; ?>">-</button>
-                        <input type="number" id="quantity-<?php echo $food['id']; ?>" name="quantity" value="1" min="1" required>
+                        <input type="number" id="quantity-<?php echo $food['id']; ?>" name="quantity" value="1" min="1" required >
                         <button type="button" class="quantity-button" data-action="increase" data-target="quantity-<?php echo $food['id']; ?>">+</button>
                     </div>
                 </div>
@@ -216,6 +216,52 @@ function get_image_path(?string $imageFilename, string $uploadDir, string $webUp
         include 'parts/footer.php'
         ?>
     </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Lắng nghe sự kiện click trên toàn bộ document, nhưng chỉ xử lý nếu click vào nút có class 'quantity-button'
+            // Đây là cách hiệu quả hơn nếu có nhiều nút như vậy trên trang (event delegation)
+            document.body.addEventListener('click', function(event) {
+                // Kiểm tra xem phần tử được click có class 'quantity-button' không
+                if (event.target.matches('.quantity-button')) {
+                    event.preventDefault(); // Ngăn hành vi mặc định của button
+
+                    const button = event.target;
+                    const action = button.getAttribute('data-action'); // Lấy hành động: 'increase' hoặc 'decrease'
+                    const targetInputId = button.getAttribute('data-target'); // Lấy id của input liên quan
+                    const targetInput = document.getElementById(targetInputId); // Tìm input element
+
+                    if (targetInput) {
+                        let currentValue = parseInt(targetInput.value, 10); // Lấy giá trị hiện tại, chuyển sang số nguyên
+
+                        // Nếu giá trị không phải là số, đặt mặc định là 1
+                        if (isNaN(currentValue)) {
+                            currentValue = 1;
+                        }
+
+                        // Tăng hoặc giảm giá trị
+                        if (action === 'increase') {
+                            currentValue++;
+                        } else if (action === 'decrease') {
+                            currentValue--;
+                        }
+
+                        // Lấy giá trị tối thiểu từ thuộc tính 'min' của input, hoặc mặc định là 1
+                        const minValue = parseInt(targetInput.min, 10) || 1;
+
+                        // Đảm bảo giá trị không nhỏ hơn giá trị tối thiểu
+                        if (currentValue < minValue) {
+                            currentValue = minValue;
+                        }
+
+                        // Cập nhật lại giá trị cho ô input
+                        targetInput.value = currentValue;
+                    } else {
+                        console.warn('Không tìm thấy ô input mục tiêu:', targetInputId);
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

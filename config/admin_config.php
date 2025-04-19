@@ -126,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
     }
 
     // Redirect after POST to prevent resubmission
-    header("Location: admin.php");
+    header("Location: admin_food.php");
     exit();
 }
 
@@ -168,7 +168,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id']))
         $_SESSION['message'] = 'Không tìm thấy món ăn để xóa.';
         $_SESSION['msg_type'] = 'danger';
     }
-    header("Location: admin.php"); // Redirect after delete
+    header("Location: admin_food.php"); // Redirect after delete
     exit();
 }
 
