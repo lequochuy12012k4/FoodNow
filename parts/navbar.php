@@ -69,7 +69,7 @@ if (session_status() == PHP_SESSION_NONE) {
                 </button>
                 <div class="dropdown-content">
                     <a href="#">Thông tin</a>
-                    <a href="#">Giỏ hàng</a>
+                    <a href="cart.php">Giỏ hàng</a>
                     <a href="logout.php">Đăng xuất</a>
                 </div>
             </div>
