@@ -1,115 +1,222 @@
 <?php
+// MUST be the very first line
 session_start();
 
-// Default redirect location
-$redirect_url = 'cart.php';
+// --- Database Configuration ---
+$servername = "localhost";
+$username_db = "root"; // Renamed DB user variable
+$password_db = "";     // Renamed DB password variable
+$databaseName = "foodnow";
+$orderTableName = 'orders'; // Your table name
 
-// Ensure the cart exists in the session
-if (!isset($_SESSION['cart'])) {
-    $_SESSION['cart'] = [];
+// --- Configuration ---
+$default_redirect = 'cart.php'; // Default redirect back to cart page
+
+// --- Helper function ---
+function redirect_with_message($url, $message, $is_error = false) {
+    // ... (function remains the same as before) ...
+    if ($is_error) {
+        $_SESSION['cart_error'] = $message;
+        unset($_SESSION['cart_message']);
+    } else {
+        $_SESSION['cart_message'] = $message;
+        unset($_SESSION['cart_error']);
+    }
+    header("Location: " . $url);
+    exit();
 }
 
-// Check if an action is specified
+// --- Determine User/Session Identifier ---
+// ** Using username from session, ensure login script sets $_SESSION['username'] **
+$session_username = isset($_SESSION['username']) ? trim($_SESSION['username']) : null;
+$session_id = session_id(); // Get current session ID for guests
+
+// --- Database Connection (Connect once at the beginning) ---
+$conn = mysqli_connect($servername, $username_db, $password_db, $databaseName);
+
+// Check connection
+if (!$conn) {
+    // Log serious error, inform user via session message and redirect
+    error_log("Database Connection failed in cart_action.php: " . mysqli_connect_error());
+    $_SESSION['cart_error'] = 'Lỗi kết nối cơ sở dữ liệu. Không thể thực hiện hành động.';
+    header('Location: ' . $default_redirect);
+    exit();
+}
+mysqli_set_charset($conn, "utf8mb4"); // Set charset
+
+// --- Process Action ---
 if (isset($_POST['action'])) {
     $action = $_POST['action'];
+    $redirect_url = $default_redirect; // Default to cart page unless changed
 
     try {
         switch ($action) {
+
             // ACTION: Update quantities for items in the cart
-            case 'update':
+            // Renamed from 'update' to match cart.php form
+            case 'update_quantities':
                 if (isset($_POST['quantity']) && is_array($_POST['quantity'])) {
                     $updated_count = 0;
                     $removed_count = 0;
-                    foreach ($_POST['quantity'] as $food_id => $quantity) {
+                    $errors = [];
+
+                    foreach ($_POST['quantity'] as $order_item_id => $quantity) {
                         // Sanitize inputs
-                        $food_id = filter_var($food_id, FILTER_VALIDATE_INT);
+                        $order_item_id = filter_var($order_item_id, FILTER_VALIDATE_INT);
                         $quantity = filter_var($quantity, FILTER_VALIDATE_INT);
 
-                        if ($food_id !== false && $quantity !== false) {
-                            if (isset($_SESSION['cart'][$food_id])) {
-                                if ($quantity > 0) {
-                                    // Update quantity only if it changed
-                                    if ($_SESSION['cart'][$food_id] != $quantity) {
-                                         $_SESSION['cart'][$food_id] = $quantity;
-                                         $updated_count++;
-                                    }
-                                } else {
-                                    // Remove item if quantity is 0 or less
-                                    unset($_SESSION['cart'][$food_id]);
-                                    $removed_count++;
-                                }
-                            }
-                        } else {
-                             // Log invalid input if necessary
-                             error_log("Invalid food_id or quantity received during cart update. ID: '{$_POST['food_id']}', Qty: '{$_POST['quantity']}'");
+                        if ($order_item_id === false || $quantity === false) {
+                            $errors[] = "Dữ liệu không hợp lệ cho một món hàng.";
+                            error_log("Invalid order_item_id or quantity received during cart update. ID: '{$_POST['order_item_id']}', Qty: '{$_POST['quantity']}'");
+                            continue; // Skip this item
                         }
-                    }
-                    if ($updated_count > 0 || $removed_count > 0) {
+
+                        if ($quantity > 0) {
+                            // --- UPDATE quantity in DB ---
+                            $sql_update = "UPDATE `{$orderTableName}` SET quantity = ?, updated_at = NOW() WHERE id = ? AND status = 'cart'";
+                            $stmt_update = null;
+
+                            if ($session_username !== null) {
+                                // Logged-in user: Check using username
+                                $sql_update .= " AND username = ?";
+                                $stmt_update = mysqli_prepare($conn, $sql_update);
+                                if ($stmt_update) mysqli_stmt_bind_param($stmt_update, "iis", $quantity, $order_item_id, $session_username);
+                            } else {
+                                // Guest user: Check using session_id and ensure username is NULL
+                                $sql_update .= " AND session_id = ? AND username IS NULL";
+                                $stmt_update = mysqli_prepare($conn, $sql_update);
+                                if ($stmt_update) mysqli_stmt_bind_param($stmt_update, "iis", $quantity, $order_item_id, $session_id);
+                            }
+
+                            if ($stmt_update && mysqli_stmt_execute($stmt_update)) {
+                                if (mysqli_stmt_affected_rows($stmt_update) > 0) {
+                                    $updated_count++;
+                                } // else: quantity might not have changed, or item didn't belong to user
+                            } else {
+                                $errors[] = "Lỗi cập nhật số lượng cho món hàng ID: {$order_item_id}.";
+                                error_log("Error updating quantity for order_item_id {$order_item_id}: " . ($stmt_update ? mysqli_stmt_error($stmt_update) : mysqli_error($conn)));
+                            }
+                             if ($stmt_update) mysqli_stmt_close($stmt_update);
+
+                        } else {
+                            // --- REMOVE item if quantity is 0 or less ---
+                            $sql_delete = "DELETE FROM `{$orderTableName}` WHERE id = ? AND status = 'cart'";
+                             $stmt_delete = null;
+
+                            if ($session_username !== null) {
+                                $sql_delete .= " AND username = ?";
+                                $stmt_delete = mysqli_prepare($conn, $sql_delete);
+                                if ($stmt_delete) mysqli_stmt_bind_param($stmt_delete, "is", $order_item_id, $session_username);
+                            } else {
+                                $sql_delete .= " AND session_id = ? AND username IS NULL";
+                                $stmt_delete = mysqli_prepare($conn, $sql_delete);
+                                if ($stmt_delete) mysqli_stmt_bind_param($stmt_delete, "is", $order_item_id, $session_id);
+                            }
+
+                             if ($stmt_delete && mysqli_stmt_execute($stmt_delete)) {
+                                 if (mysqli_stmt_affected_rows($stmt_delete) > 0) {
+                                     $removed_count++;
+                                 } // else: item already removed or didn't belong to user
+                             } else {
+                                 $errors[] = "Lỗi xóa món hàng (số lượng <= 0) ID: {$order_item_id}.";
+                                 error_log("Error deleting order_item_id {$order_item_id} (qty<=0): " . ($stmt_delete ? mysqli_stmt_error($stmt_delete) : mysqli_error($conn)));
+                             }
+                              if ($stmt_delete) mysqli_stmt_close($stmt_delete);
+                        }
+                    } // end foreach
+
+                    // --- Set feedback messages ---
+                    if (!empty($errors)) {
+                        $_SESSION['cart_error'] = "Đã xảy ra lỗi khi cập nhật giỏ hàng: " . implode(' ', $errors);
+                    } elseif ($updated_count > 0 || $removed_count > 0) {
                          $_SESSION['cart_message'] = "Giỏ hàng đã được cập nhật.";
                          if ($removed_count > 0) {
-                            $_SESSION['cart_message'] .= " ({$removed_count} món đã được xóa do số lượng bằng 0.)";
+                             $_SESSION['cart_message'] .= " ({$removed_count} món đã được xóa.)";
                          }
                     } else {
-                         // No actual changes were made
-                         // $_SESSION['cart_message'] = "Không có thay đổi nào trong giỏ hàng.";
+                         // No effective changes or only non-owned items targeted
+                         // $_SESSION['cart_message'] = "Không có thay đổi nào được thực hiện trong giỏ hàng.";
                     }
 
                 } else {
-                    // No quantity data submitted for update
                      $_SESSION['cart_error'] = "Không nhận được dữ liệu số lượng để cập nhật.";
                 }
-                break;
+                break; // End case 'update_quantities'
 
             // ACTION: Remove a specific item from the cart
-            case 'remove':
-                if (isset($_POST['food_id'])) {
-                    $food_id = filter_var($_POST['food_id'], FILTER_VALIDATE_INT);
-                    if ($food_id !== false && isset($_SESSION['cart'][$food_id])) {
-                        unset($_SESSION['cart'][$food_id]);
-                        $_SESSION['cart_message'] = "Món ăn đã được xóa khỏi giỏ hàng.";
+            // Renamed from 'remove' to match cart.php form
+            case 'remove_item':
+                if (isset($_POST['order_item_id'])) { // Expecting order_item_id now
+                    $order_item_id = filter_var($_POST['order_item_id'], FILTER_VALIDATE_INT);
+
+                    if ($order_item_id !== false) {
+                        // --- DELETE item from DB ---
+                        $sql_delete = "DELETE FROM `{$orderTableName}` WHERE id = ? AND status = 'cart'";
+                        $stmt_delete = null;
+
+                        if ($session_username !== null) {
+                            $sql_delete .= " AND username = ?";
+                            $stmt_delete = mysqli_prepare($conn, $sql_delete);
+                            if ($stmt_delete) mysqli_stmt_bind_param($stmt_delete, "is", $order_item_id, $session_username);
+                        } else {
+                            $sql_delete .= " AND session_id = ? AND username IS NULL";
+                            $stmt_delete = mysqli_prepare($conn, $sql_delete);
+                             if ($stmt_delete) mysqli_stmt_bind_param($stmt_delete, "is", $order_item_id, $session_id);
+                        }
+
+                        if ($stmt_delete && mysqli_stmt_execute($stmt_delete)) {
+                            if (mysqli_stmt_affected_rows($stmt_delete) > 0) {
+                                $_SESSION['cart_message'] = "Món ăn đã được xóa khỏi giỏ hàng.";
+                            } else {
+                                // Item not found for this user/session or already deleted
+                                $_SESSION['cart_error'] = "Không tìm thấy món ăn để xóa hoặc bạn không có quyền.";
+                                error_log("Attempted to remove non-existent/unowned order_item_id '{$order_item_id}' from cart. User: {$session_username}, Session: {$session_id}");
+                            }
+                        } else {
+                            $_SESSION['cart_error'] = "Lỗi khi xóa món ăn.";
+                             error_log("Error deleting order_item_id {$order_item_id}: " . ($stmt_delete ? mysqli_stmt_error($stmt_delete) : mysqli_error($conn)));
+                        }
+                        if ($stmt_delete) mysqli_stmt_close($stmt_delete);
+
                     } else {
-                        // Item not found or invalid ID
-                        $_SESSION['cart_error'] = "Không thể xóa món ăn. ID không hợp lệ hoặc món ăn không có trong giỏ.";
-                         error_log("Attempted to remove non-existent/invalid food_id '{$_POST['food_id']}' from cart.");
+                        $_SESSION['cart_error'] = "ID món ăn không hợp lệ để xóa.";
                     }
                 } else {
                      $_SESSION['cart_error'] = "Không có ID món ăn nào được cung cấp để xóa.";
                 }
-                break;
+                break; // End case 'remove_item'
 
-            // ACTION: Clear the entire cart
-            case 'clear':
-                $_SESSION['cart'] = []; // Reset cart to empty array
-                $_SESSION['cart_message'] = "Giỏ hàng đã được xóa sạch.";
-                break;
+            // ACTION: Clear the entire cart for the current user/session
+            // Renamed from 'clear' to match cart.php form
+            case 'clear_cart':
+                 $sql_clear = "DELETE FROM `{$orderTableName}` WHERE status = 'cart'";
+                 $stmt_clear = null;
 
-             // ACTION: Add an item (Though you likely have cart_add.php, good to handle here too for consistency or if merging)
-             case 'add':
-                if (isset($_POST['food_id']) && isset($_POST['quantity'])) {
-                     $food_id = filter_var($_POST['food_id'], FILTER_VALIDATE_INT);
-                     $quantity = filter_var($_POST['quantity'], FILTER_VALIDATE_INT);
+                 if ($session_username !== null) {
+                     $sql_clear .= " AND username = ?";
+                     $stmt_clear = mysqli_prepare($conn, $sql_clear);
+                     if ($stmt_clear) mysqli_stmt_bind_param($stmt_clear, "s", $session_username);
+                 } else {
+                     $sql_clear .= " AND session_id = ? AND username IS NULL";
+                     $stmt_clear = mysqli_prepare($conn, $sql_clear);
+                      if ($stmt_clear) mysqli_stmt_bind_param($stmt_clear, "s", $session_id);
+                 }
 
-                     if ($food_id !== false && $quantity !== false && $quantity > 0) {
-                         // Add to cart or update quantity if already exists
-                         if (isset($_SESSION['cart'][$food_id])) {
-                             $_SESSION['cart'][$food_id] += $quantity; // Add to existing quantity
-                             $_SESSION['cart_message'] = "Số lượng món ăn đã được cập nhật trong giỏ hàng.";
-                         } else {
-                             $_SESSION['cart'][$food_id] = $quantity; // Add new item
-                              $_SESSION['cart_message'] = "Món ăn đã được thêm vào giỏ hàng.";
-                         }
-                         // Redirect back to the *previous* page (usually food detail) after adding
-                         $redirect_url = $_SERVER['HTTP_REFERER'] ?? 'index.php';
+                 if ($stmt_clear && mysqli_stmt_execute($stmt_clear)) {
+                     // Check affected rows to see if anything was actually deleted
+                     if (mysqli_stmt_affected_rows($stmt_clear) > 0) {
+                         $_SESSION['cart_message'] = "Giỏ hàng đã được xóa sạch.";
                      } else {
-                          $_SESSION['cart_error'] = "Không thể thêm vào giỏ. Dữ liệu không hợp lệ.";
-                           error_log("Invalid data received for cart 'add' action. ID: '{$_POST['food_id']}', Qty: '{$_POST['quantity']}'");
-                           $redirect_url = $_SERVER['HTTP_REFERER'] ?? 'index.php'; // Redirect back on error too
+                          $_SESSION['cart_message'] = "Giỏ hàng đã trống.";
                      }
-                } else {
-                      $_SESSION['cart_error'] = "Thiếu thông tin món ăn hoặc số lượng để thêm vào giỏ.";
-                      $redirect_url = $_SERVER['HTTP_REFERER'] ?? 'index.php'; // Redirect back
-                }
-                 break;
+                 } else {
+                     $_SESSION['cart_error'] = "Lỗi khi xóa giỏ hàng.";
+                      error_log("Error clearing cart: " . ($stmt_clear ? mysqli_stmt_error($stmt_clear) : mysqli_error($conn)));
+                 }
+                 if ($stmt_clear) mysqli_stmt_close($stmt_clear);
+                 break; // End case 'clear_cart'
+
+            // REMOVED 'add' action - should be handled by cart_add.php
 
             default:
                  $_SESSION['cart_error'] = "Hành động không hợp lệ.";
@@ -117,8 +224,13 @@ if (isset($_POST['action'])) {
         }
     } catch (Exception $e) {
          // Catch any unexpected errors during processing
-         $_SESSION['cart_error'] = "Đã xảy ra lỗi khi xử lý giỏ hàng.";
+         $_SESSION['cart_error'] = "Đã xảy ra lỗi hệ thống khi xử lý giỏ hàng.";
          error_log("Exception in cart_action.php: " . $e->getMessage());
+    } finally {
+        // Ensure connection is closed
+        if ($conn) {
+            mysqli_close($conn);
+        }
     }
 
 } else {
@@ -127,43 +239,7 @@ if (isset($_POST['action'])) {
     error_log("cart_action.php called without a POST action.");
 }
 
-// Redirect back to the cart page (or previous page for 'add')
+// Redirect back to the cart page
 header('Location: ' . $redirect_url);
-exit(); // Important to prevent further script execution after redirect
-?>
-<?php
-session_start();
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['food_id']) && isset($_POST['quantity'])) {
-    $food_id = filter_input(INPUT_POST, 'food_id', FILTER_VALIDATE_INT);
-    $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
-
-    if ($food_id && $quantity && $quantity > 0) {
-        // Initialize cart if it doesn't exist
-        if (!isset($_SESSION['cart'])) {
-            $_SESSION['cart'] = [];
-        }
-
-        // If item already in cart, add to quantity; otherwise, set quantity
-        if (isset($_SESSION['cart'][$food_id])) {
-            $_SESSION['cart'][$food_id] += $quantity;
-             $_SESSION['cart_message'] = "Số lượng món ăn đã được cập nhật trong giỏ hàng.";
-        } else {
-            $_SESSION['cart'][$food_id] = $quantity;
-             $_SESSION['cart_message'] = "Món ăn đã được thêm vào giỏ hàng.";
-        }
-        // Redirect back to the food detail page (or wherever user came from)
-        header('Location: ' . $_SERVER['HTTP_REFERER']);
-        exit;
-    } else {
-         $_SESSION['cart_error'] = "Dữ liệu không hợp lệ để thêm vào giỏ.";
-         // Redirect back with error
-         header('Location: ' . $_SERVER['HTTP_REFERER']);
-         exit;
-    }
-} else {
-    // Redirect if accessed directly or invalid request
-    header('Location: index.php');
-    exit;
-}
+exit();
 ?>

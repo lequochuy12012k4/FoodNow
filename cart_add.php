@@ -1,85 +1,187 @@
 <?php
-// MUST be the very first line, before any output or whitespace
+// MUST be the very first line
 session_start();
 
+// --- Database Configuration ---
+$servername = "localhost";
+$username_db = "root"; // Renamed to avoid conflict with session username
+$password_db = "";
+$databaseName = "foodnow";
+$foodTableName = 'food_data';
+$orderTableName = 'orders'; // Your table name
+
 // --- Configuration ---
-// Set a default redirect location in case HTTP_REFERER is not available
 $default_redirect = 'index.php';
-// You might want to redirect to cart.php after adding? Uncomment the line below if so.
-// $default_redirect = 'cart.php';
+
+// --- Helper function ---
+function redirect_with_message($url, $message, $is_error = false) {
+    // ... (function remains the same as before) ...
+    if ($is_error) {
+        $_SESSION['cart_error'] = $message;
+        unset($_SESSION['cart_message']);
+    } else {
+        $_SESSION['cart_message'] = $message;
+        unset($_SESSION['cart_error']);
+    }
+    header("Location: " . $url);
+    exit();
+}
 
 // --- Input Processing ---
 
-// 1. Check if the request method is POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // 2. Check if required data is present
     if (isset($_POST['food_id']) && isset($_POST['quantity'])) {
 
-        // 3. Validate and Sanitize Input
         $food_id = filter_input(INPUT_POST, 'food_id', FILTER_VALIDATE_INT);
         $quantity = filter_input(INPUT_POST, 'quantity', FILTER_VALIDATE_INT);
+        $redirect_url = $_SERVER['HTTP_REFERER'] ?? $default_redirect;
 
-        // 4. Check if validation was successful and quantity is positive
-        if ($food_id !== false && $food_id > 0 && $quantity !== false && $quantity > 0) {
+        if ($food_id === false || $food_id <= 0 || $quantity === false || $quantity <= 0) {
+             redirect_with_message($redirect_url, "Dữ liệu không hợp lệ. Vui lòng nhập số lượng hợp lệ.", true);
+        }
 
-            // 5. Initialize the cart in session if it doesn't exist
-            if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
-                $_SESSION['cart'] = [];
+        // --- Database Operations ---
+
+        $session_username = isset($_SESSION['username']) ? trim($_SESSION['username']) : null;
+        $session_id = session_id();
+
+        $conn = mysqli_connect($servername, $username_db, $password_db, $databaseName);
+
+        if (!$conn) {
+            error_log("Database Connection failed in cart_add.php: " . mysqli_connect_error());
+            redirect_with_message($redirect_url, 'Lỗi kết nối cơ sở dữ liệu. Vui lòng thử lại sau.', true);
+        }
+        mysqli_set_charset($conn, "utf8mb4");
+
+        try {
+            // --- 7. Fetch Food Price AND NAME - *** MODIFIED *** ---
+            // Select both price and name now
+            $sql_food_details = "SELECT price, name FROM `{$foodTableName}` WHERE id = ? LIMIT 1";
+            $stmt_food_details = mysqli_prepare($conn, $sql_food_details);
+            // ... (error checking for prepare same as before) ...
+            if (!$stmt_food_details) throw new Exception("Lỗi chuẩn bị câu lệnh lấy chi tiết món ăn: " . mysqli_error($conn));
+
+            mysqli_stmt_bind_param($stmt_food_details, "i", $food_id);
+            mysqli_stmt_execute($stmt_food_details);
+            $result_food_details = mysqli_stmt_get_result($stmt_food_details);
+            $food_data = mysqli_fetch_assoc($result_food_details);
+            mysqli_stmt_close($stmt_food_details);
+
+            if (!$food_data) {
+                 redirect_with_message($redirect_url, 'Món ăn không tồn tại (ID: ' . htmlspecialchars($food_id) . ').', true);
             }
+            // Get both price and name from the fetched data
+            $current_price = (float)$food_data['price'];
+            $current_food_name = $food_data['name']; // <-- Store the food name
 
-            // 6. Add/Update item in the cart
-            if (isset($_SESSION['cart'][$food_id])) {
-                // Item already exists, increase quantity
-                $_SESSION['cart'][$food_id] += $quantity;
-                $_SESSION['cart_message'] = "Số lượng món ăn đã được cập nhật trong giỏ hàng.";
-                // --- Optional Debugging ---
-                // error_log("Cart Add: Updated quantity for ID {$food_id}. New quantity: {$_SESSION['cart'][$food_id]}");
+            // --- 8. Check if item already exists ---
+            // ** This part remains the same (checks by food_id and user/session) **
+            $existing_cart_item = null;
+            $sql_check = "SELECT id, quantity FROM `{$orderTableName}` WHERE food_id = ? AND status = 'cart'";
+            // ... (rest of the checking logic for user/guest remains the same) ...
+            $stmt_check = null;
+            if ($session_username !== null) {
+                $sql_check .= " AND username = ?";
+                $stmt_check = mysqli_prepare($conn, $sql_check);
+                if (!$stmt_check) throw new Exception("Lỗi chuẩn bị câu lệnh kiểm tra (user): " . mysqli_error($conn));
+                mysqli_stmt_bind_param($stmt_check, "is", $food_id, $session_username);
             } else {
-                // Item does not exist, add it
-                $_SESSION['cart'][$food_id] = $quantity;
-                $_SESSION['cart_message'] = "Món ăn đã được thêm vào giỏ hàng.";
-                 // --- Optional Debugging ---
-                // error_log("Cart Add: Added new item ID {$food_id} with quantity {$quantity}");
+                $sql_check .= " AND session_id = ? AND username IS NULL";
+                $stmt_check = mysqli_prepare($conn, $sql_check);
+                 if (!$stmt_check) throw new Exception("Lỗi chuẩn bị câu lệnh kiểm tra (guest): " . mysqli_error($conn));
+                mysqli_stmt_bind_param($stmt_check, "is", $food_id, $session_id);
+            }
+            $sql_check .= " LIMIT 1";
+            mysqli_stmt_execute($stmt_check);
+            $result_check = mysqli_stmt_get_result($stmt_check);
+            $existing_cart_item = mysqli_fetch_assoc($result_check);
+            mysqli_stmt_close($stmt_check);
+
+            // --- 9. Update or Insert ---
+            if ($existing_cart_item) {
+                // --- UPDATE existing item quantity ---
+                // ** We generally don't need to update the food_name here **
+                // ** unless food names can change and you want the cart to reflect that **
+                // ** Keeping it simple: only update quantity and price (if needed) **
+                $existing_item_id = $existing_cart_item['id'];
+                $new_quantity = $existing_cart_item['quantity'] + $quantity;
+
+                // Update quantity and price_at_add (in case price changed since first add - optional)
+                // We are NOT updating food_name on quantity change here.
+                $sql_update = "UPDATE `{$orderTableName}` SET quantity = ?, price_at_add = ?, updated_at = NOW() WHERE id = ?";
+                $stmt_update = mysqli_prepare($conn, $sql_update);
+                 if (!$stmt_update) throw new Exception("Lỗi chuẩn bị câu lệnh cập nhật: " . mysqli_error($conn));
+
+                mysqli_stmt_bind_param($stmt_update, "idi", $new_quantity, $current_price, $existing_item_id);
+
+                if (!mysqli_stmt_execute($stmt_update)) {
+                    throw new Exception("Lỗi thực thi câu lệnh cập nhật: " . mysqli_stmt_error($stmt_update));
+                }
+                mysqli_stmt_close($stmt_update);
+                $message = "Số lượng món ăn đã được cập nhật trong giỏ hàng.";
+
+            } else {
+                // --- INSERT new item - *** MODIFIED FOR food_name *** ---
+                // Add `food_name` column to INSERT list
+                $sql_insert = "INSERT INTO `{$orderTableName}`
+                               (session_id, user_id, username, food_id, food_name, quantity, price_at_add, status, added_at, updated_at)
+                               VALUES (?, ?, ?, ?, ?, ?, ?, 'cart', NOW(), NOW())"; // Added ?, for food_name
+
+                $stmt_insert = mysqli_prepare($conn, $sql_insert);
+                 if (!$stmt_insert) throw new Exception("Lỗi chuẩn bị câu lệnh thêm mới: " . mysqli_error($conn));
+
+                $bind_session_id_val = ($session_username === null) ? $session_id : null;
+                $bind_user_id_val = null;
+                $bind_username_val = $session_username;
+                // ** $current_food_name is the new value to bind **
+
+                // Bind parameters:
+                // s: session_id (string/null)
+                // s: user_id (binding NULL)
+                // s: username (string/null)
+                // i: food_id (integer)
+                // s: food_name (string) <-- NEW
+                // i: quantity (integer)
+                // d: price_at_add (double)
+                // ** Adjusted type string: sssisid **
+                mysqli_stmt_bind_param($stmt_insert, "sssisid", // <-- Updated type string
+                    $bind_session_id_val,
+                    $bind_user_id_val,
+                    $bind_username_val,
+                    $food_id,
+                    $current_food_name, // <-- Bind the food name
+                    $quantity,
+                    $current_price
+                );
+
+
+                 if (!mysqli_stmt_execute($stmt_insert)) {
+                    throw new Exception("Lỗi thực thi câu lệnh thêm mới: " . mysqli_stmt_error($stmt_insert));
+                }
+                mysqli_stmt_close($stmt_insert);
+                $message = "Đã thêm món ăn vào giỏ hàng.";
             }
 
-             // --- Optional Debugging: Log cart contents after modification ---
-            // error_log("Cart contents after add/update: " . print_r($_SESSION['cart'], true));
+            // --- Success ---
+            mysqli_close($conn);
+            redirect_with_message($redirect_url, $message, false);
 
-
-            // 7. Redirect back to the previous page (or default)
-            $redirect_url = $_SERVER['HTTP_REFERER'] ?? $default_redirect;
-            header('Location: ' . $redirect_url);
-            exit(); // IMPORTANT: Stop script execution after redirect
-
-        } else {
-            // Validation failed (invalid ID, quantity <= 0, or not numbers)
-            $_SESSION['cart_error'] = "Dữ liệu không hợp lệ. Vui lòng nhập số lượng hợp lệ.";
-            // --- Optional Debugging ---
-            // error_log("Cart Add Validation Failed: ID received='{$_POST['food_id']}', Qty received='{$_POST['quantity']}'");
-            $redirect_url = $_SERVER['HTTP_REFERER'] ?? $default_redirect;
-            header('Location: ' . $redirect_url);
-            exit(); // Stop script execution
+        } catch (Exception $e) {
+            // --- Handle Database Errors ---
+            error_log("Error in cart_add.php database operation: " . $e->getMessage());
+            redirect_with_message($redirect_url, 'Đã xảy ra lỗi khi xử lý giỏ hàng. Vui lòng thử lại.', true);
         }
 
     } else {
-        // Required POST data (food_id or quantity) is missing
-        $_SESSION['cart_error'] = "Thiếu thông tin món ăn hoặc số lượng.";
-         // --- Optional Debugging ---
-        // error_log("Cart Add Failed: Missing food_id or quantity in POST data.");
+        // Required POST data missing
         $redirect_url = $_SERVER['HTTP_REFERER'] ?? $default_redirect;
-        header('Location: ' . $redirect_url);
-        exit(); // Stop script execution
+        redirect_with_message($redirect_url, "Thiếu thông tin món ăn hoặc số lượng.", true);
     }
 
 } else {
-    // Request method is not POST (e.g., direct access via GET)
-    // Optionally set an error message, but often just redirecting is enough
-    // $_SESSION['cart_error'] = "Yêu cầu không hợp lệ.";
-     // --- Optional Debugging ---
-    // error_log("Cart Add Failed: Request method was not POST.");
-    header('Location: ' . $default_redirect); // Redirect to a safe page
-    exit(); // Stop script execution
+    // Not a POST request
+    header('Location: ' . $default_redirect);
+    exit();
 }
-
 ?>

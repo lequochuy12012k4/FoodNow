@@ -75,9 +75,9 @@ if (session_status() == PHP_SESSION_NONE) {
             </div>
         <?php else: ?>
             <div class="account-menu">
-                <a href="login.php" class="header-link" style="color: black;">Đăng nhập</a>
+                <a href="login.php" class="header-link" style="color: white;">Đăng nhập</a>
                 <span style="color: black;"> | </span> 
-                <a href="register.php" class="header-link" style="color: black;">Đăng ký</a>
+                <a href="register.php" class="header-link" style="color: white;">Đăng ký</a>
             </div>
         <?php endif; ?>
 
