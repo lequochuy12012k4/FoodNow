@@ -10,8 +10,8 @@ if (session_status() == PHP_SESSION_NONE) {
     <nav>
         <a href="index.php" class="active">Trang chủ</a>
         <a href="food.php">Đồ ăn</a>
-        <a href="#">Khuyến Mãi</a>
-        <a href="#">Chi nhánh</a>
+        <a href="#">Sách Công thức</a>
+        <a href="achievements.php">Thành tựu</a>
         <a href="#">Cảm nhận</a>
         <a href="#">Liên hệ</a>
     </nav>
@@ -68,7 +68,7 @@ if (session_status() == PHP_SESSION_NONE) {
                     <span class="dropdown-arrow">▼</span>
                 </button>
                 <div class="dropdown-content">
-                    <a href="#">Thông tin</a>
+                    <a href="profile.php">Thông tin</a>
                     <a href="cart.php">Giỏ hàng</a>
                     <a href="logout.php">Đăng xuất</a>
                 </div>

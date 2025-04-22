@@ -8,7 +8,7 @@
 body {
     font-family: 'Poppins', sans-serif;
     background-color: #f4f7f6;
-    color: #333;
+    color: #212529;
     line-height: 1.6;
     overflow-x: hidden; /* Prevent horizontal scroll caused by transitions */
 }
