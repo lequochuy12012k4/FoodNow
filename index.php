@@ -1,7 +1,7 @@
 <?php
 include 'parts/header.php';
 ?>
-
+<title>FoodNow</title>
 <body>
     <?php
     include 'parts/navbar.php';

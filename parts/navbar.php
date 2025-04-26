@@ -10,9 +10,9 @@ if (session_status() == PHP_SESSION_NONE) {
     <nav>
         <a href="index.php" class="active">Trang chủ</a>
         <a href="food.php">Đồ ăn</a>
-        <a href="#">Sách Công thức</a>
+        <a href="promotions.php">Khuyến mãi</a>
         <a href="achievements.php">Thành tựu</a>
-        <a href="#">Cảm nhận</a>
+        <a href="feedback.php">Cảm nhận</a>
         <a href="contact.php">Liên hệ</a>
     </nav>
     <div class="header-icons">

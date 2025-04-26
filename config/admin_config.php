@@ -227,4 +227,5 @@ try {
     // Avoid echoing $e->getMessage() directly in production!
     die("Database connection failed. Please check configuration or contact support.");
 }
+
 ?>

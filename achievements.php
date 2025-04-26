@@ -4,6 +4,7 @@ session_start();
 // Không cần require db_config.php nữa
 ?>
 <?php include 'parts/header.php';?>
+<title>Thành tựu</title>
 <body>
 
     <?php include 'parts/navbar.php';?>

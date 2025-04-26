@@ -1,12 +1,6 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liên Hệ - FoodNow</title>
-    <link rel="stylesheet" href="css/contact.css">
-    <!-- <link rel="icon" href="favicon.ico" type="image/x-icon"> -->
-</head>
+<?php include 'parts/header.php' ?>
+<link rel="stylesheet" href="css/contact.css">
+<title>Liên hệ</title>
 <body>
     <?php
     include 'parts/navbar.php'; // Include your standard header
@@ -46,7 +40,7 @@
         </div>
     </main>
 
-    <!-- Footer (Optional) -->
+    <?php include 'parts/footer.php' ?>
     <footer>
         <div class="container">
             <p>© 2024 FoodNow. Bảo lưu mọi quyền.</p>

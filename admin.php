@@ -262,6 +262,7 @@ try {
                     <li><a href="admin_food.php"><i class="fas fa-utensils fa-fw"></i> <span>Quản lý Món ăn</span></a></li>
                     <li><a href="admin_order.php"><i class="fas fa-receipt fa-fw"></i> <span>Quản lý Đơn hàng</span></a></li>
                     <li><a href="admin_users.php"><i class="fas fa-users fa-fw"></i> <span>Quản lý Người dùng</span></a></li>
+                    <li><a href="admin_promotions.php"><i class="fas fa-tags fa-fw"></i> <span>Quản lý Khuyến mãi</span></a></li>
                     <li><a href="logout.php"><i class="fas fa-sign-out-alt fa-fw"></i> <span>Đăng xuất</span></a></li>
                 </ul>
             </nav>
