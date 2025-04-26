@@ -873,7 +873,7 @@ if (!$conn) {
                 <!-- Display Empty Cart Message -->
                 <div class="cart-empty">
                     <p>Giỏ hàng của bạn đang trống.</p>
-                    <a href="index.php" class="btn btn-primary">Tiếp tục mua sắm</a>
+                    <a href="food.php" class="btn btn-primary">Tiếp tục mua sắm</a>
                 </div>
             <?php else: ?>
                 <!-- Display Cart Items Table -->
@@ -967,7 +967,7 @@ if (!$conn) {
 
                 <!-- Checkout Actions -->
                 <div class="cart-checkout-actions">
-                    <a href="index.php" class="btn btn-outline-secondary">Tiếp tục mua sắm</a>
+                    <a href="food.php" class="btn btn-outline-secondary">Tiếp tục mua sắm</a>
                     <button type="button" id="open-checkout-sidebar-btn" class="btn btn-success btn-checkout">Tiến hành thanh toán</button>
                 </div><!-- /.cart-checkout-actions -->
 

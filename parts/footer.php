@@ -5,6 +5,6 @@
 <script src="js/script.js"></script>
 <footer>
     <div class="container">
-        <p>© 2024 FoodNow. Bảo lưu mọi quyền.</p>
+        <p>© 2025 FoodNow. Bảo lưu mọi quyền.</p>
     </div>
 </footer>
