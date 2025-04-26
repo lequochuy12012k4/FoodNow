@@ -18,10 +18,10 @@ if (file_exists('config/admin_config.php')) {
     $total_order_count_display = 0;
     $online_order_count_display = 0;
     $offline_order_count_display = 0;
-    $pending_order_count_display = 0; // Or overall pending count if preferred for initial load
+    $pending_order_count_display = 0;
     $search_term = '';
     $selected_status = '';
-    $valid_filter_statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']; // Define for form even on error
+    $valid_filter_statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
     $pdo = null; // Indicate DB connection failed
 }
 
@@ -43,23 +43,35 @@ if ($pdo && (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || 
 // If config didn't load, $admin_username is default, otherwise get from session
 $admin_username = ($pdo) ? htmlspecialchars($_SESSION["username"]) : $admin_username;
 
+// --- Initialize variables ---
+$search_term = '';
+$selected_status = '';
+$order_items_list = [];
+$grouped_orders = [];
+$final_orders_to_display = [];
+$overall_pending_count = 0;
+$total_order_count_display = 0;
+$online_order_count_display = 0;
+$offline_order_count_display = 0;
+$pending_order_count_display = 0;
+$transaction_statuses = []; // To store payment statuses
+$valid_filter_statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']; // Define default
 
 // --- START: FETCH "ORDER" ITEMS WITH SEARCH AND STATUS FILTER (Only if DB connected) ---
 if ($pdo) {
-    $search_term = '';
     if (isset($_GET['search']) && !empty($_GET['search'])) {
         $search_term = trim($_GET['search']);
     }
-    $selected_status = '';
     if (isset($_GET['status_filter']) && !empty($_GET['status_filter'])) {
         $selected_status = trim($_GET['status_filter']);
     }
 
-    // Base SQL query
+    // Base SQL query - STEP 1: Added o.transaction_id
     $sql = "SELECT o.id AS item_row_id, o.user_id, o.username AS order_table_username,
                    o.food_id, o.food_name, o.quantity, o.price_at_add,
                    o.status, o.added_at,
                    o.recipient_name, o.recipient_phone, o.recipient_address, o.payment_method,
+                   o.transaction_id, -- <-- Added this column
                    u.username AS user_table_username, u.full_name AS customer_full_name
             FROM orders o
             LEFT JOIN users u ON o.user_id = u.id
@@ -69,7 +81,7 @@ if ($pdo) {
     if (!empty($search_term)) {
         $sql .= " AND (CAST(o.id AS CHAR) LIKE :search_term_id OR o.username LIKE :search_term_order_user OR u.username LIKE :search_term_table_user OR u.full_name LIKE :search_term_fullname OR o.food_name LIKE :search_term_food OR o.recipient_name LIKE :search_term_recipient OR o.recipient_phone LIKE :search_term_phone)";
         $search_like = "%" . $search_term . "%";
-        $params[':search_term_id'] = $search_like; // Consider searching ID exactly if needed: $params[':search_term_id'] = $search_term;
+        $params[':search_term_id'] = $search_like;
         $params[':search_term_order_user'] = $search_like;
         $params[':search_term_table_user'] = $search_like;
         $params[':search_term_fullname'] = $search_like;
@@ -78,14 +90,21 @@ if ($pdo) {
         $params[':search_term_phone'] = $search_like;
     }
 
+    // Add status filter (applies to individual item status)
+    if (!empty($selected_status)) {
+        $sql .= " AND o.status = :status_filter";
+        $params[':status_filter'] = $selected_status;
+    }
+
+    // Grouping should logically happen *after* potentially filtering items by status
+    // However, the original logic grouped first, then filtered the groups.
+    // Let's stick to the original grouping approach for now, but be aware this might
+    // filter out whole groups if *none* of their items match the $selected_status filter.
     $sql .= " ORDER BY o.user_id, o.recipient_name, o.recipient_phone, o.payment_method, o.added_at DESC";
 
 
     $stmt = $pdo->prepare($sql);
-    $order_items_list = [];
-    $grouped_orders = [];
-    $final_orders_to_display = [];
-    $overall_pending_count = 0; // Count pending before filtering
+
 
     try {
         $stmt->execute($params);
@@ -108,7 +127,8 @@ if ($pdo) {
                         'recipient_name' => $item['recipient_name'], 'recipient_phone' => $item['recipient_phone'],
                         'recipient_address' => $item['recipient_address'], 'payment_method' => $item['payment_method'],
                         'first_added_at' => $item['added_at'], 'last_added_at' => $item['added_at'],
-                        'items' => [], 'total_price' => 0, 'contains_status' => []
+                        'items' => [], 'total_price' => 0, 'contains_status' => [],
+                        'transaction_id' => $item['transaction_id'] // STEP 2: Store transaction_id for the group
                     ];
                 }
 
@@ -123,6 +143,10 @@ if ($pdo) {
                 if (isset($item['added_at']) && strtotime($item['added_at']) > strtotime($grouped_orders[$group_key]['last_added_at'])) {
                     $grouped_orders[$group_key]['last_added_at'] = $item['added_at'];
                 }
+                // Ensure transaction_id is consistent within the group (optional check)
+                // if ($grouped_orders[$group_key]['transaction_id'] != $item['transaction_id']) {
+                //     error_log("Warning: Inconsistent transaction ID within group key $group_key");
+                // }
             }
             // Sort grouped orders
             uasort($grouped_orders, function ($a, $b) {
@@ -131,6 +155,36 @@ if ($pdo) {
                 return $time_b <=> $time_a;
             });
 
+            // --- STEP 3: FETCH TRANSACTION STATUSES ---
+            $transaction_ids = [];
+            foreach ($grouped_orders as $group) {
+                if (!empty($group['transaction_id']) && !in_array($group['transaction_id'], $transaction_ids)) {
+                    $transaction_ids[] = $group['transaction_id'];
+                }
+            }
+
+            if (!empty($transaction_ids)) {
+                try {
+                    // Create placeholders for the IN clause
+                    $in_placeholders = implode(',', array_fill(0, count($transaction_ids), '?'));
+                    $sql_trans = "SELECT id, payment_status FROM transactions WHERE id IN ($in_placeholders)";
+                    $stmt_trans = $pdo->prepare($sql_trans);
+                    // Execute with the array of IDs
+                    $stmt_trans->execute($transaction_ids); // PDO handles binding IN clause values correctly
+
+                    while ($row = $stmt_trans->fetch(PDO::FETCH_ASSOC)) {
+                        $transaction_statuses[$row['id']] = $row['payment_status'];
+                    }
+                } catch (PDOException $e) {
+                    // Log error but continue page load
+                    error_log("Database Error (Fetch Transaction Statuses) in " . __FILE__ . ": " . $e->getMessage());
+                    $message .= " | Lỗi khi tải trạng thái thanh toán."; // Append to existing message
+                    $msg_type = "warning";
+                }
+            }
+            // --- END: FETCH TRANSACTION STATUSES ---
+
+
             // --- CALCULATE OVERALL PENDING COUNT (Before Filtering) ---
              foreach ($grouped_orders as $order) {
                 if (in_array('pending', $order['contains_status'])) {
@@ -138,16 +192,27 @@ if ($pdo) {
                 }
             }
 
-            // --- STATUS FILTERING ---
+             // Apply the filter *after* grouping and fetching transaction statuses
+            // This maintains the original filter behavior on item status
             if (!empty($selected_status)) {
                 foreach ($grouped_orders as $group_key => $order) {
-                    if (in_array(strtolower($selected_status), $order['contains_status'])) {
+                    // Keep group if *any* item has the selected status
+                    $has_selected_status = false;
+                    foreach($order['items'] as $item) {
+                        if (strtolower($item['status']) === strtolower($selected_status)) {
+                            $has_selected_status = true;
+                            break;
+                        }
+                    }
+                    if ($has_selected_status) {
                         $final_orders_to_display[$group_key] = $order;
                     }
                 }
             } else {
+                // If no status filter, show all grouped orders
                 $final_orders_to_display = $grouped_orders;
             }
+
         }
         // --- END: GROUPING & FILTERING LOGIC ---
 
@@ -164,18 +229,24 @@ if ($pdo) {
     $total_order_count_display = count($final_orders_to_display);
     $online_order_count_display = 0;
     $offline_order_count_display = 0; // COD
-    $pending_order_count_display = 0; // Pending shown in table
+    $pending_order_count_display = 0; // Pending item status shown in table
 
     foreach ($final_orders_to_display as $order) {
         $pm = strtolower(trim($order['payment_method'] ?? ''));
         if ($pm === 'online') $online_order_count_display++;
         elseif ($pm === 'cod') $offline_order_count_display++;
-        if (in_array('pending', $order['contains_status'])) $pending_order_count_display++;
+        // Count groups that contain at least one 'pending' item
+        $has_pending_item = false;
+        foreach($order['items'] as $item) {
+             if(strtolower($item['status']) === 'pending') {
+                 $has_pending_item = true;
+                 break;
+             }
+        }
+        if($has_pending_item) $pending_order_count_display++;
     }
     // --- END: CALCULATE COUNTS ---
 
-    // Define valid statuses for the filter dropdown
-    $valid_filter_statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 } // End of if($pdo) block
 ?>
 <!DOCTYPE html>
@@ -190,6 +261,7 @@ if ($pdo) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* --- Existing styles from your previous code --- */
         :root {
             --primary-color: #4CAF50;
             --secondary-color: #f8f9fa;
@@ -225,11 +297,11 @@ if ($pdo) {
         .main-header { background-color: #fff; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: sticky; top: 0; z-index: 999; flex-wrap: wrap;}
         .header-title { display: flex; align-items: center; }
         .header-title h1 { font-size: 1.6em; margin-left: 15px; color: var(--text-color); font-weight: 600; }
-        .header-menu-toggle { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-color); display: none; }
+        .header-menu-toggle { background: none; border: none; font-size: 1.5em; cursor: pointer; color: var(--text-color); }
         .header-user { display: flex; align-items: center; gap: 15px;}
         .header-user .filter-search-form { display: flex; align-items: center;} /* Ensure form elements line up */
         .header-user input[type="search"] { padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 20px 0 0 20px; font-size: 0.9em; outline: none; min-width: 250px; height: 36px; border-right: none; }
-        .header-user .search-btn { padding: 8px 12px; border: 1px solid var(--primary-color); background-color: var(--primary-color); color: white; border-radius: 0 20px 20px 0; cursor: pointer; height: 36px; border-left: none; }
+        .header-user .search-btn { padding: 8px 12px; border: 1px solid var(--orange-color); background-color: var(--orange-color); color: white; border-radius: 0 20px 20px 0; cursor: pointer; height: 36px; border-left: none; }
         .user-info { display: flex; align-items: center; cursor: pointer; position: relative; }
         .user-info .avatar { width: 35px; height: 35px; border-radius: 50%; margin-right: 10px; object-fit: cover; border: 2px solid var(--border-color); }
         .user-info span { font-weight: 500; margin-right: 5px; }
@@ -249,6 +321,7 @@ if ($pdo) {
         .message { padding: 15px; margin-bottom: 20px; border-radius: 5px; font-size: 0.95em; }
         .success-message { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .error-message { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning-message { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; } /* For warnings */
 
         /* --- Summary Cards --- */
         .summary-cards-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
@@ -296,12 +369,20 @@ if ($pdo) {
         .delete-item-btn:hover { background-color: #c82333; }
         .order-status-select { border: 1px solid #ccc; background-color: #fff; }
         .order-status-select:focus { outline: none; border-color: var(--primary-color); }
-        /* Status label classes (can be applied to select/options if needed) */
+
+        /* Item Status label classes */
         .status-label-pending { color: var(--warning-color); font-weight: bold; }
         .status-label-processing { color: var(--info-color); font-weight: bold; }
         .status-label-shipped { color: var(--purple-color); font-weight: bold; }
         .status-label-delivered { color: var(--success-color); font-weight: bold; }
         .status-label-cancelled { color: var(--danger-color); font-weight: bold; }
+        .status-label-default { color: #6c757d; } /* Default/Unknown */
+        .status-label-unknown { color: #adb5bd; font-style: italic; }
+
+        /* Payment Status Cell */
+        td.payment-status-cell { font-weight: bold; white-space: nowrap; text-align: center;}
+        .payment-status-cell .tooltip { font-size: 0.8em; font-weight: normal; color: #6c757d; display: block; margin-top: 2px;}
+
         td.address-col[title] { cursor: help; } /* Tooltip hint */
         #loading-spinner { color: var(--primary-color); } /* Spinner styling */
 
@@ -335,13 +416,27 @@ if ($pdo) {
             .table-controls { flex-direction: column; align-items: stretch; } /* Stack controls */
             .table-controls h2 { margin-bottom: 10px; text-align: center;}
             .table-controls .filter-container { justify-content: center; } /* Center filter */
+            /* Hide less important columns on smaller screens */
+            .table-container th:nth-child(1), .table-container td:nth-child(1), /* Customer */
+            .table-container th:nth-child(3), .table-container td:nth-child(3), /* Phone */
+            .table-container th:nth-child(4), .table-container td:nth-child(4), /* Address */
+            .table-container th:nth-child(8), .table-container td:nth-child(8) { /* Date */
+                 /* display: none; */ /* Uncomment to hide */
+            }
         }
         @media (max-width: 576px) {
             body { display: block; }
             .sidebar { height: auto; position: relative; width: 100%; }
             .main-content { margin-left: 0; padding: 15px; }
             .main-header { padding: 10px 15px; }
-            .header-menu-toggle { display: none; }
+            .header-menu-toggle {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: var(--text-color);
+    /* display: none; <--- This is the line hiding the button by default */
+}
             .sidebar-nav ul { display: flex; flex-wrap: wrap; justify-content: center; }
             .sidebar-nav li { flex-basis: 50%; text-align: center; }
             .sidebar-nav li a { justify-content: center; padding: 10px; }
@@ -355,6 +450,10 @@ if ($pdo) {
              .table-controls { padding: 10px;}
              .item-actions { flex-direction: column; align-items: flex-end; gap: 8px;} /* Stack item actions */
              .delete-item-btn, .order-status-select { width: auto;}
+             /* Hide more columns on very small screens */
+             .table-container th:nth-child(2), .table-container td:nth-child(2) { /* Recipient */
+                 /* display: none; */ /* Uncomment to hide */
+            }
         }
     </style>
 </head>
@@ -370,7 +469,6 @@ if ($pdo) {
                     <li><a href="admin_food.php"><i class="fas fa-utensils fa-fw"></i> <span>Quản lý Món ăn</span></a></li>
                     <li class="active"><a href="admin_order.php"><i class="fas fa-receipt fa-fw"></i> <span>Quản lý Đơn hàng</span></a></li>
                     <li><a href="admin_users.php"><i class="fas fa-users fa-fw"></i> <span>Quản lý Người dùng</span></a></li>
-                    <li><a href="admin_transfer.php"><i class="fas fa-money-check-dollar fa-fw"></i> <span>Quản lý Giao dịch</span></a></li>
                     <li><a href="logout.php"><i class="fas fa-sign-out-alt fa-fw"></i> <span>Đăng xuất</span></a></li>
                 </ul>
             </nav>
@@ -387,23 +485,17 @@ if ($pdo) {
                         <input type="search" id="admin-search-order" name="search" placeholder="Tìm kiếm đơn hàng..." autocomplete="off" value="<?php echo htmlspecialchars($search_term); ?>">
                         <button type="submit" class="search-btn" aria-label="Tìm kiếm"><i class="fas fa-search"></i></button>
                     </form>
-                    <div class="user-info">
-                        <img src="images/placeholder-avatar.png" alt="Admin Avatar" class="avatar"> <!-- Update path -->
-                        <span><?php echo $admin_username; ?></span> <i class="fas fa-caret-down"></i>
-                        <div class="user-dropdown">
-                            <a href="#">Hồ sơ</a>
-                            <a href="logout.php">Đăng xuất</a>
-                        </div>
-                    </div>
+                    <?php include 'parts/admin_info.php' ?>
                  </div>
             </header>
 
             <!-- Display Messages -->
             <?php if ($message): ?>
-                <div class="message <?php echo $msg_type === 'danger' ? 'error-message' : 'success-message'; ?>">
+                <div class="message <?php echo ($msg_type === 'danger') ? 'error-message' : (($msg_type === 'warning') ? 'warning-message' : 'success-message'); ?>">
                     <?php echo htmlspecialchars($message); ?>
                 </div>
             <?php endif; ?>
+
 
             <!-- Summary Cards Section -->
             <div class="summary-cards-container">
@@ -475,9 +567,10 @@ if ($pdo) {
                             <th>Người nhận</th>
                             <th>SĐT Nhận</th>
                             <th>Địa chỉ Giao</th>
-                            <th>Sản phẩm & Trạng thái</th>
+                            <th>Sản phẩm & Trạng thái Item</th> <!-- Clarified header -->
                             <th>Tổng tiền</th>
                             <th>Thanh toán</th>
+                            <th>Trạng thái TT</th> <!-- STEP 4: Added Header -->
                             <th>Ngày đặt</th>
                         </tr>
                     </thead>
@@ -497,6 +590,40 @@ if ($pdo) {
                                 $display_date_str = $order['last_added_at'] ?? $order['first_added_at']; $display_date = $display_date_str ? date("d/m/y H:i", strtotime($display_date_str)) : 'N/A';
                                 $full_address = htmlspecialchars($order['recipient_address'] ?? ''); $short_address = mb_strimwidth($full_address, 0, 60, "...");
                                 $valid_item_statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']; // For item dropdown
+
+                                // --- STEP 5: Get Payment Status ---
+                                $current_transaction_id = $order['transaction_id'] ?? null;
+                                $payment_status_raw = ($current_transaction_id && isset($transaction_statuses[$current_transaction_id]))
+                                    ? $transaction_statuses[$current_transaction_id]
+                                    : null; // Get status from fetched array
+
+                                $payment_status_display = 'N/A'; // Default display
+                                $payment_status_class = 'status-label-unknown'; // Default CSS class
+
+                                if ($payment_status_raw !== null) {
+                                    $status_lower = strtolower($payment_status_raw);
+                                    switch ($status_lower) {
+                                        case 'pending': $payment_status_display = 'Chờ TT'; $payment_status_class = 'status-label-pending'; break;
+                                        case 'completed': $payment_status_display = 'Đã TT'; $payment_status_class = 'status-label-delivered'; break; // Use green
+                                        case 'cod_pending': $payment_status_display = 'Chờ COD'; $payment_status_class = 'status-label-pending'; break; // Use yellow
+                                        case 'failed': $payment_status_display = 'Thất bại'; $payment_status_class = 'status-label-cancelled'; break; // Use red
+                                        case 'verified': $payment_status_display = 'Đã xác nhận'; $payment_status_class = 'status-label-processing'; break; // Use blue/info
+                                        default: $payment_status_display = htmlspecialchars(ucfirst($payment_status_raw)); $payment_status_class = 'status-label-default'; break;
+                                    }
+                                } elseif ($order['payment_method'] === 'cod' && $current_transaction_id === null) {
+                                     // Special case: If it's COD and no transaction exists (maybe old order or error), assume Pending COD
+                                     $payment_status_display = 'Chưa thanh toán';
+                                     $payment_status_class = 'status-label-pending';
+                                } elseif ($current_transaction_id !== null && $payment_status_raw === null) {
+                                     // Transaction ID exists, but status wasn't found (shouldn't happen often)
+                                     $payment_status_display = 'Lỗi Status';
+                                     $payment_status_class = 'status-label-cancelled';
+                                } else {
+                                     // No transaction ID at all
+                                     $payment_status_display = 'Chưa Thanh toán';
+                                     $payment_status_class = 'status-label-unknown';
+                                }
+                                // --- END: Get Payment Status ---
                                 ?>
                                 <tr>
                                      <td data-label="Khách hàng"><?php echo htmlspecialchars($customer_display_name); ?></td>
@@ -505,14 +632,14 @@ if ($pdo) {
                                      <td data-label="Địa chỉ Giao" class="address-col" title="<?php echo $full_address ?: 'Không có địa chỉ'; ?>">
                                          <?php echo nl2br(htmlspecialchars($short_address ?: '-')); ?>
                                      </td>
-                                     <td data-label="Sản phẩm & Trạng thái" class="items-col">
+                                     <td data-label="Sản phẩm & Trạng thái Item" class="items-col">
                                          <ul class="items-list">
                                              <?php if (!empty($order['items'])): ?>
                                                  <?php foreach ($order['items'] as $item): ?>
                                                      <?php
                                                      $current_status = htmlspecialchars(strtolower($item['status'] ?? 'unknown'));
                                                      $item_id = htmlspecialchars($item['item_row_id'] ?? '');
-                                                     $item_price = $item['price_at_add'] ?? 0; // Keep numeric for calculations
+                                                     $item_price = $item['price_at_add'] ?? 0; // Keep numeric
                                                      $item_quantity = $item['quantity'] ?? 0; // Keep numeric
                                                      $item_name = htmlspecialchars($item['food_name'] ?? 'N/A');
                                                      ?>
@@ -526,7 +653,7 @@ if ($pdo) {
                                                              </span>
                                                          </div>
                                                          <div class="item-actions">
-                                                             <select class="order-status-select" data-item-id="<?php echo $item_id; ?>" data-original-status="<?php echo $current_status; ?>" aria-label="Trạng thái mục <?php echo $item_id; ?>">
+                                                             <select class="order-status-select <?php /* echo 'status-label-' . $current_status; */ ?>" data-item-id="<?php echo $item_id; ?>" data-original-status="<?php echo $current_status; ?>" aria-label="Trạng thái mục <?php echo $item_id; ?>">
                                                                  <option value="pending" <?php echo $current_status == 'pending' ? 'selected' : ''; ?>>Chờ xử lý</option>
                                                                  <option value="processing" <?php echo $current_status == 'processing' ? 'selected' : ''; ?>>Đang xử lý</option>
                                                                  <option value="shipped" <?php echo $current_status == 'shipped' ? 'selected' : ''; ?>>Đã giao</option>
@@ -555,12 +682,20 @@ if ($pdo) {
                                      </td>
                                      <td data-label="Tổng tiền" class="total-price-row"><?php echo number_format($order['total_price'] ?? 0, 0, ',', '.'); ?> đ</td>
                                      <td data-label="Thanh toán" class="payment-method <?php echo $pm_class; ?>"><?php echo $payment_method_display; ?></td>
+                                     <!-- STEP 5 Cont: Display Payment Status -->
+                                     <td data-label="Trạng thái TT" class="payment-status-cell <?php echo $payment_status_class; ?>">
+                                        <?php echo $payment_status_display; ?>
+                                        <?php if ($current_transaction_id): ?>
+                                            <span class="tooltip">(GD: #<?php echo htmlspecialchars($current_transaction_id); ?>)</span>
+                                        <?php endif; ?>
+                                     </td>
                                      <td data-label="Ngày đặt" style="white-space: nowrap;"><?php echo $display_date; ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="8" style="text-align:center; padding: 20px;">
+                                <!-- STEP 6: Update Colspan -->
+                                <td colspan="9" style="text-align:center; padding: 20px;">
                                     <?php
                                         if (!empty($search_term) || !empty($selected_status)) {
                                             echo "Không tìm thấy đơn hàng nào phù hợp.";
@@ -582,6 +717,9 @@ if ($pdo) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         $(document).ready(function() {
+            // --- Existing JS code (Sidebar Toggle, Currency Format, Live Search, Status Update, Delete Item) ---
+            // Should mostly work, but AJAX search/filter needs updating.
+
             // --- Sidebar Toggle ---
             const $adminContainer = $('.admin-container');
             const sidebarStateKey = 'adminSidebarState';
@@ -590,9 +728,8 @@ if ($pdo) {
                 else { $adminContainer.removeClass('sidebar-collapsed'); }
             }
             $('.header-menu-toggle').on('click', function() {
-                $adminContainer.toggleClass('sidebar-collapsed');
-                if ($(window).width() > 992) { localStorage.setItem(sidebarStateKey, $adminContainer.hasClass('sidebar-collapsed') ? 'collapsed' : 'expanded'); }
-                else { localStorage.removeItem(sidebarStateKey); }
+                $('.admin-container').toggleClass('sidebar-collapsed');
+                // localStorage logic might be needed here if admin.js doesn't handle it
             });
             applySidebarState();
             $(window).on('resize', applySidebarState);
@@ -604,7 +741,7 @@ if ($pdo) {
                  catch (e) { return number.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".") + ' đ'; }
             }
 
-            // --- Live Search & Filter ---
+            // --- Live Search & Filter (Needs Update for AJAX) ---
             const searchInput = $('#admin-search-order');
             const statusFilter = $('#status-filter');
             const tableBody = $('#orders-table-body');
@@ -624,27 +761,28 @@ if ($pdo) {
                 $('.summary-card .card-value').css('opacity', 0.5);
                 if (currentSearchRequest) { currentSearchRequest.abort(); }
 
+                // STEP 8: Ensure admin_order_ajax.php is updated
                 currentSearchRequest = $.ajax({
-                    url: 'admin_order_ajax.php',
+                    url: 'admin_order_ajax.php', // This PHP file MUST be updated too
                     type: 'GET',
                     data: { search: searchTerm, status_filter: statusValue },
                     dataType: 'json',
                     success: function(response) {
                         if (response && response.html !== undefined && response.counts) {
-                            tableBody.html(response.html);
+                            tableBody.html(response.html); // Assumes AJAX returns full HTML rows including the new column
                             cardTotalOrders.text(response.counts.total || 0);
                             cardPendingOrders.text(response.counts.pending || 0);
                             cardOnlinePayments.text(response.counts.online || 0);
                             cardCodPayments.text(response.counts.cod || 0);
                         } else {
-                            tableBody.html('<tr class="no-results"><td colspan="8">Lỗi tải dữ liệu. Phản hồi không hợp lệ.</td></tr>');
+                            tableBody.html('<tr class="no-results"><td colspan="9">Lỗi tải dữ liệu. Phản hồi không hợp lệ.</td></tr>'); // Updated colspan
                             cardTotalOrders.text('0'); cardPendingOrders.text('0'); cardOnlinePayments.text('0'); cardCodPayments.text('0');
                         }
                     },
                     error: function(jqXHR, textStatus) {
                         if (textStatus !== 'abort') {
                             console.error("AJAX Search/Filter Error:", textStatus, jqXHR.responseText);
-                            tableBody.html('<tr class="no-results"><td colspan="8">Lỗi kết nối khi tải kết quả.</td></tr>');
+                            tableBody.html('<tr class="no-results"><td colspan="9">Lỗi kết nối khi tải kết quả.</td></tr>'); // Updated colspan
                             cardTotalOrders.text('0'); cardPendingOrders.text('0'); cardOnlinePayments.text('0'); cardCodPayments.text('0');
                         }
                     },
@@ -672,7 +810,7 @@ if ($pdo) {
             });
 
             // --- Status Update (Event Delegation) ---
-            tableBody.on('change', 'select.order-status-select', function() {
+             tableBody.on('change', 'select.order-status-select', function() {
                  var selectElement = $(this);
                  var itemId = selectElement.data('item-id');
                  var newStatus = selectElement.val();
@@ -709,6 +847,7 @@ if ($pdo) {
                      complete: function() { selectElement.prop('disabled', false); }
                  });
             });
+
 
             // --- Delete Item (Event Delegation) ---
             tableBody.on('click', 'button.delete-item-btn', function(e) {
@@ -769,6 +908,7 @@ if ($pdo) {
                     // No complete needed here as button is removed or re-enabled in success/error
                 });
             });
+
 
         }); // End document ready
     </script>

@@ -1,0 +1,414 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap'); /* Example Font * /* Sử dụng Google Font Poppins */
+
+:root {
+    --background-dark: #1c1c1c; /* Màu nền tối */
+    --card-background: #2a2a2a;  /* Màu nền cho card/box */
+    --text-light: #f0f0f0;      /* Màu chữ chính (sáng) */
+    --text-secondary: #a0a0a0; /* Màu chữ phụ (xám nhạt) */
+    --accent-gold: #e0ac69;     /* Màu vàng nhấn (giống ảnh) */
+    --link-color: #4db6ac;      /* Màu link trong card (giống ảnh) */
+    --border-color: #3a3a3a;    /* Màu viền nhẹ */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: var(--background-dark);
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+a {
+    color: var(--text-light);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--accent-gold);
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* --- Header / Navigation --- */
+.navbar {
+    background-color: var(--background-dark); /* Hoặc màu tối hơn một chút nếu muốn */
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.8em;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+}
+
+.nav-links li {
+    margin-left: 25px;
+}
+
+.nav-links a {
+    padding-bottom: 5px;
+    position: relative;
+}
+
+.nav-links a.active,
+.nav-links a:hover {
+    color: var(--accent-gold);
+}
+
+/* Đường gạch chân màu vàng cho link active */
+.nav-links a.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; /* Điều chỉnh vị trí gạch chân */
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--accent-gold);
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+}
+
+.search-box {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 5px 15px;
+    margin-right: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.search-box input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-light);
+    margin-right: 5px;
+}
+
+.search-box button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1em; /* Thêm icon search vào đây */
+}
+
+.auth-links a {
+    margin-left: 15px;
+    font-size: 0.9em;
+}
+
+/* --- Main Content Area --- */
+main {
+    padding: 150px 0;
+}
+
+.page-title {
+    text-align: center;
+    font-size: 2.5em;
+    color: var(--accent-gold);
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.page-subtitle {
+    text-align: center;
+    font-size: 1.1em;
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+}
+
+/* --- Styles for Testimonial Cards (Cảm nhận) --- */
+.testimonial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.testimonial-card {
+    background-color: var(--card-background);
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-gold); /* Thêm điểm nhấn */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.testimonial-card blockquote {
+    font-style: italic;
+    color: var(--text-light);
+    margin-bottom: 15px;
+    border-left: 3px solid var(--text-secondary);
+    padding-left: 15px;
+}
+
+.testimonial-card .author {
+    font-weight: 600;
+    color: var(--accent-gold);
+    text-align: right;
+}
+
+.testimonial-card .source {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    text-align: right;
+}
+
+/* --- Styles for Contact Form (Liên hệ) --- */
+.contact-form {
+    max-width: 700px;
+    margin: 0 auto;
+    background-color: var(--card-background);
+    padding: 30px 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--background-dark); /* Nền input tối hơn */
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-light);
+    font-family: inherit;
+    font-size: 1em;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+}
+
+.form-group textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+.submit-btn {
+    background-color: var(--accent-gold);
+    color: var(--background-dark);
+    border: none;
+    padding: 12px 25px;
+    font-size: 1.1em;
+    font-weight: 600;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: block; /* Hoặc inline-block tùy layout */
+    width: 100%; /* Nút chiếm toàn bộ chiều rộng form */
+    text-align: center;
+}
+
+.submit-btn:hover {
+    background-color: #c99455; /* Màu vàng đậm hơn khi hover */
+    transform: translateY(-2px);
+}
+
+/* --- Footer (Optional) --- */
+footer {
+    text-align: center;
+    font-size: 0.9em;
+}
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap'); /* Example Font */
+
+:root {
+    --primary-color: #ffc107; /* Example Yellow/Orange Accent */
+    --text-light: #f8f9fa;
+    --text-dark: #343a40;
+    --bg-dark: #212529;
+    --bg-carousel: #3e444a; /* Example darker overlay color */
+    --bg-food-section: #1a1a1a; /* Background for food section */
+    --bg-food-item: #282828; /* Background for food items */
+}
+
+
+body{
+    margin: 0;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+}
+a{
+    text-decoration: none;
+    color: var(--text-light);
+    transition: color 0.3s ease;
+}
+a:hover {
+    color: var(--primary-color);
+}
+
+/* --- Header Styling (Similar to Target) --- */
+header{
+    width: 100%; /* Full width */
+    max-width: 1400px; /* Max width */
+    margin: 0 auto; /* Center */
+    height: 80px; /* Adjust height */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: absolute; /* Position over carousel */
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 150; /* High z-index */
+    padding: 0 40px; /* Horizontal padding */
+    box-sizing: border-box;
+}
+header .logo {
+    font-size: 1.4em;
+    font-weight: 700;
+    letter-spacing: 1px;
+    /* Add actual logo image if available */
+}
+header nav {
+    display: flex;
+    gap: 25px; /* Adjust gap */
+}
+header nav a{
+    padding: 5px 0; /* Padding top/bottom */
+    font-size: 1em;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    position: relative;
+    border-bottom: 2px solid transparent; /* For hover effect */
+}
+header nav a.active,
+header nav a:hover {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color); /* Underline effect */
+}
+/* --- Header Styling --- */
+/* ... (Keep existing header styles) ... */
+
+header .header-icons {
+    display: flex;
+    align-items: center; /* Vertically align icons/text */
+    gap: 25px; /* Adjust gap between search and account */
+    /* font-size: 1.7em; REMOVED - Set font size on individual elements */
+    cursor: default; /* Remove cursor pointer from the container */
+    margin-left: 15px;
+}
+
+/* Search Input Styling (Moved from inline) */
+.search-container {
+    position: relative; /* For positioning the icon */
+    display: flex;
+    align-items: center;
+}
+.search {
+    height: 35px; /* Slightly taller */
+    width: 200px; /* Adjust width */
+    background-color: rgba(255, 255, 255, 0.8); /* Slightly less transparent */
+    opacity: 0.7; /* Adjust overall opacity if needed */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 18px; /* More rounded */
+    color: var(--text-dark); /* Dark text */
+    padding-left: 15px;
+    padding-right: 35px; /* Make space for icon */
+    font-size: 0.8em; /* Adjust font size */
+    font-family: 'Montserrat', sans-serif;
+    transition: opacity 0.3s ease, width 0.3s ease;
+}
+.search:focus {
+    opacity: 1;
+    width: 230px; /* Expand on focus */
+    outline: none;
+    border-color: var(--primary-color);
+}
+.search::placeholder{
+    color: #555; /* Darker placeholder */
+    font-style: italic;
+    opacity: 0.8;
+}
+.search-icon {
+    position: absolute;
+    right: 12px;
+    font-size: 1.1em; /* Adjust icon size */
+    color: #555; /* Match placeholder */
+    pointer-events: none; /* Icon doesn't block input */
+}
+
+
+/* Account Dropdown Styling */
+.account-menu {
+    position: relative; /* Crucial for positioning the dropdown */
+    display: inline-block; /* Keep elements together */
+}
+
+.account-trigger {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: var(--text-light); /* Inherit header text color */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between icon, text, arrow */
+    transition: color 0.3s ease;
+}
+.account-trigger:hover,
+.account-menu.active .account-trigger { /* Style when dropdown is open */
+     color: var(--primary-color);
+}
+
+.account-icon {
+    font-size: 1.5em; /* Size of the user icon */
+}
+.account-text {
+    font-size: 0.9em; /* Size of "My Account" text */
+    font-weight: 500;
+}
+.dropdown-arrow {
+    font-size: 0.7em; /* Smaller arrow */
+    transition: transform 0.3s ease;
+}
+.account-menu.active .dropdown-arrow {
+     transform: rotate(180deg); /* Flip arrow when open */
+}

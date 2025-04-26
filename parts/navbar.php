@@ -13,7 +13,7 @@ if (session_status() == PHP_SESSION_NONE) {
         <a href="#">Sách Công thức</a>
         <a href="achievements.php">Thành tựu</a>
         <a href="#">Cảm nhận</a>
-        <a href="#">Liên hệ</a>
+        <a href="contact.php">Liên hệ</a>
     </nav>
     <div class="header-icons">
         <span class="search-container">

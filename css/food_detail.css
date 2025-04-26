@@ -10,7 +10,10 @@
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
-
+footer {
+    text-align: center;
+    font-size: 0.9em;
+}
 .food-detail .detail-image {
     flex: 1 1 400px; /* Allow image to grow/shrink, base width 400px */
     max-width: 500px; /* Max image width */

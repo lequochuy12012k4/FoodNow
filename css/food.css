@@ -12,7 +12,10 @@
     --bg-food-item: #282828; /* Background for food items */
 }
 
-
+footer {
+    text-align: center;
+    font-size: 0.9em;
+}
 body{
     margin: 0;
     background-color: var(--bg-dark);

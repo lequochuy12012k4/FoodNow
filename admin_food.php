@@ -151,7 +151,6 @@ if (!empty($foods)) {
                     <li class="active"><a href="admin_food.php"><i class="fas fa-utensils"></i> <span>Quản lý Món ăn</span></a></li>
                     <li><a href="admin_order.php"><i class="fas fa-receipt"></i> <span>Quản lý Đơn hàng</span></a></li>
                     <li><a href="admin_users.php"><i class="fas fa-users"></i> <span>Quản lý Người dùng</span></a></li>
-                    <li><a href="admin_transfer.php"><i class="fas fa-money-check-dollar"></i> <span>Quản lý Giao dịch</span></a></li>
                     <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> <span>Đăng xuất</span></a></li>
                 </ul>
             </nav>
@@ -169,14 +168,7 @@ if (!empty($foods)) {
                 <div class="header-user">
                     <input type="search" id="admin-search-food" placeholder="Tìm kiếm món ăn..." autocomplete="off">
                     <button class="search-btn"><i class="fas fa-search"></i></button>
-                    <div class="user-info">
-                        <img src="" alt="Admin Avatar" class="avatar">
-                        <span><?php echo $admin_username; ?></span> <i class="fas fa-caret-down"></i>
-                        <div class="user-dropdown">
-                            <a href="#">Hồ sơ</a>
-                            <a href="logout.php">Đăng xuất</a>
-                        </div>
-                    </div>
+                    <?php include 'parts/admin_info.php' ?>
                 </div>
             </header>
 
