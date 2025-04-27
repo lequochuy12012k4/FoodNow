@@ -140,7 +140,8 @@ function get_image_path(?string $imageFilename, string $uploadDir, string $webUp
 }
 
 ?>
-
+<title><?php echo htmlspecialchars($food['name']); ?></title>
+<link rel="shortcut icon" href="image/foodnow_icon.png" sizes="32x32" type="image/x-icon">
 <body>
     <?php
     include 'parts/navbar.php';
@@ -164,18 +165,35 @@ function get_image_path(?string $imageFilename, string $uploadDir, string $webUp
             <p class="description"><?php echo nl2br(htmlspecialchars($food['description'])); // Use nl2br to respect newlines 
                                     ?></p>
             <div class="rating"><?php echo generate_stars($food['rate'] ?? 0); ?></div>
-            <form action="cart_add.php" method="post" class="add-to-cart-form">
-                <input type="hidden" name="food_id" value="<?php echo $food['id']; ?>">
-                <div class="quantity-selector">
-                    <label for="quantity-<?php echo $food['id']; ?>">Số lượng:</label>
-                    <div class="quantity-controls">
-                        <button type="button" class="quantity-button" data-action="decrease" data-target="quantity-<?php echo $food['id']; ?>">-</button>
-                        <input type="number" id="quantity-<?php echo $food['id']; ?>" name="quantity" value="1" min="1" required >
-                        <button type="button" class="quantity-button" data-action="increase" data-target="quantity-<?php echo $food['id']; ?>">+</button>
+            <?php
+            // Kiểm tra xem biến session 'user_id' (hoặc tên bạn dùng để định danh người dùng) có tồn tại và không rỗng không
+            if (isset($_SESSION['id']) && !empty($_SESSION['id'])):
+            ?>
+                <!-- Nếu đã đăng nhập, hiển thị form thêm vào giỏ hàng -->
+                <form action="cart_add.php" method="post" class="add-to-cart-form">
+                    <input type="hidden" name="food_id" value="<?php echo $food['id']; ?>">
+                    <div class="quantity-selector">
+                        <label for="quantity-<?php echo $food['id']; ?>">Số lượng:</label>
+                        <div class="quantity-controls">
+                            <button type="button" class="quantity-button" data-action="decrease" data-target="quantity-<?php echo $food['id']; ?>">-</button>
+                            <input type="number" id="quantity-<?php echo $food['id']; ?>" name="quantity" value="1" min="1" required >
+                            <button type="button" class="quantity-button" data-action="increase" data-target="quantity-<?php echo $food['id']; ?>">+</button>
+                        </div>
                     </div>
+                    <button type="submit" class="order-button" data-food-id="<?php echo $food['id']; ?>">Thêm vào giỏ hàng</button>
+                </form>
+            <?php else: ?>
+                <!-- Nếu chưa đăng nhập, hiển thị thông báo và nút/link đăng nhập -->
+                <div class="login-required-message" style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; border-radius: 4px;">
+                    <p>Vui lòng <a href="login.php" style="font-weight: bold; color: #0056b3;">đăng nhập</a> để thêm món ăn vào giỏ hàng.</p>
+                    <?php
+                        // (Tùy chọn) Lưu lại trang hiện tại để chuyển hướng về sau khi đăng nhập thành công
+                        // Bạn cần xử lý việc này trong trang login.php
+                        $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+                    ?>
                 </div>
-                <button type="submit" class="order-button" data-food-id="<?php echo $food['id']; ?>">Thêm vào giỏ hàng</button>
-            </form>
+            <?php endif; ?>
+
         </section>
 
         <?php if (!empty($related_foods)): ?>

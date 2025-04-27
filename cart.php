@@ -204,10 +204,10 @@ if (!$conn) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giỏ hàng - FoodNow</title>
+    <title>Giỏ hàng</title>
     <!-- Link to your main CSS file -->
     <link rel="stylesheet" href="css/style.css"> <!-- Adjust path if needed -->
-    <!-- You might have other CSS links here (e.g., Bootstrap) -->
+    <link rel="shortcut icon" href="image/foodnow_icon.png" sizes="32x32" type="image/x-icon">
 
     <!-- Inline styles are included below for completeness, but external CSS is recommended -->
     <style>

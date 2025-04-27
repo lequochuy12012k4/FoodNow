@@ -123,13 +123,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Handle potential other POST requests if needed, e.g., from social logins later
     // }
 }
+require __DIR__ . "/vendor/autoload.php"; // Make sure this path is correct
+$client = new Google\Client;
+// !!! Replace with your ACTUAL Google Credentials !!!
+$client->setClientId('330375461320-cmqo2b80gf5b53nvgdumd4ft0doku64d.apps.googleusercontent.com');
+$client->setClientSecret('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');
+// --- IMPORTANT: Use the correct URL for your callback file ---
+$client->setRedirectUri('http://localhost:3000/google_callback.php'); // NO trailing slash unless intended everywhere
+$client->addScope("email");
+$client->addScope("profile");
+$google_login_url = $client->createAuthUrl();
 ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoodNow - Đăng ký</title>
+    <link rel="shortcut icon" href="image/foodnow_icon.png" sizes="32x32" type="image/x-icon">
+    <title>Đăng ký</title>
     <style>
         :root {
             --primary-color: #ff6b6b;
@@ -206,11 +217,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
              text-decoration: none;
              display: block; /* Make link take full width for centering text */
              margin-bottom: 1.5rem;
+            
         }
 
         .foodnow-title {
             text-align: center;
-            color: var(--primary-color);
+            color: #e54d26;
             font-size: 2.5rem; /* Slightly smaller title */
             font-weight: bold;
             margin: 0; /* Remove default margin */
@@ -286,14 +298,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .btn-primary {
-            background-color: var(--primary-color);
+            background-color: #e54d26;
             color: var(--white-color);
             margin-top: 1rem; /* Adjusted space above the main button */
         }
 
         .btn-primary:hover {
-            background-color: var(--primary-hover-color);
-            color: var(--white-color);
+            background-color: white;
+            color: #e54d26;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            border: 1px solid ;
         }
 
         .social-login-divider {
@@ -343,14 +357,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .btn-google:hover {
-            background-color: var(--google-hover-bg);
+            background-color: rgb(204, 204, 204);
             border-color: #bbb;
             color: var(--label-color); /* Keep text color consistent on hover */
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
         }
 
         .btn-facebook {
-             background-color: var(--facebook-bg);
-             color: var(--white-color);
+             background-color: var(--white-color);
+             color: var(--label-color);
              border-color: var(--facebook-bg);
              /* opacity: 0.7;
              pointer-events: none; */ /* Temporarily disable if not implemented */
@@ -360,6 +375,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               background-color: var(--facebook-hover-bg);
               border-color: var(--facebook-hover-bg);
               color: var(--white-color);
+              box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
          }
           /* Facebook uses inline SVG, slightly different fill required */
          .btn-facebook .fb-icon path:first-child { fill: var(--facebook-bg); }
@@ -375,7 +391,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         .form-footer a {
-            color: var(--primary-color);
+            color: #e54d26;
             text-decoration: none;
             font-weight: 600;
         }
@@ -439,6 +455,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 padding: 3rem 3.5rem; /* Fine-tune padding */
             }
         }
+        .forgot-password-link {
+            text-align: right; /* Căn phải */
+            margin-top: 8px;  /* Khoảng cách với input password */
+            font-size: 0.85em; /* Cỡ chữ nhỏ hơn */
+        }
+        .forgot-password-link a {
+            color: #6c757d; /* Màu xám */
+            text-decoration: none;
+        }
+        .forgot-password-link a:hover {
+            color: #e44d26; /* Màu cam khi hover */
+            text-decoration: underline;
+        }
 
     </style>
 </head>
@@ -483,12 +512,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 <button type="submit" class="btn btn-primary">Đăng ký</button>
             </form>
-
+            <div class="forgot-password-link">
+                <a href="forgot_password.php">Quên mật khẩu?</a>
+            </div>
             <div class="social-login-divider"><span>Hoặc đăng ký với</span></div>
 
              <div class="social-login-buttons">
                  <!-- Google Sign-Up Button (Link needs Google API setup similar to login) -->
-                 <a href="#" class="btn btn-social btn-google">
+                 <a href="<?= htmlspecialchars($google_login_url) ?>" class="btn btn-social btn-google">
                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l0.001-0.001l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
                      Google
                 </a>
@@ -501,7 +532,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
              </div>
 
             <div class="form-footer">
-                Đã có tài khoản? <a href="login.php">Đăng nhập ngay</a>
+                Đã có tài khoản? <a href="login.php">Đăng nhập</a>
             </div>
         </div>
     </div>

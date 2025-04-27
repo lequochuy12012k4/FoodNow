@@ -2,6 +2,7 @@
 include 'parts/header.php';
 ?>
 <title>Đồ ăn</title>
+<link rel="shortcut icon" href="image/foodnow_icon.png" sizes="32x32" type="image/x-icon">
 <body>
     <?php
     include 'parts/navbar.php';
@@ -22,8 +23,7 @@ include 'parts/header.php';
             <button class="tab-button" data-category="Bánh ngọt">Bánh ngọt</button>
             <button class="tab-button" data-category="Trái cây">Trái cây</button>
             <button class="tab-button" data-category="Đồ ăn nhanh">Đồ ăn nhanh</button>
-        </div>
-
+        </div>  
         <form action="" method="post">
             <div class="food-grid">
             <?php

@@ -151,6 +151,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php
 include 'parts/header.php';
 ?>
+<title>Thông tin cá nhân</title>
+<link rel="shortcut icon" href="image/foodnow_icon.png" sizes="32x32" type="image/x-icon">
 <body>
     <style>
         :root {
@@ -441,7 +443,7 @@ include 'parts/header.php';
             <p class="password-section-title">Thay đổi mật khẩu (Để trống nếu không muốn đổi)</p>
             <div class="form-group">
                 <label for="old_password">Xác nhận mật khẩu hiện tại:</label>
-                <input type="password" id="old_password" name="old_password" required placeholder="Nhập mật khẩu hiện tại để lưu thay đổi">
+                <input type="password" id="old_password" name="old_password" placeholder="Nhập mật khẩu hiện tại để lưu thay đổi">
                 <?php if (isset($errors['old_password'])): ?>
                     <div class="error-text"><?php echo $errors['old_password']; ?></div>
                 <?php endif; ?>

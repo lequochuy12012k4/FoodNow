@@ -12,6 +12,8 @@ unset($_SESSION['checkout_notice']);
 // unset($_SESSION['cart']);
 
 ?>
+<title>Đặt hàng thành công</title>
+<link rel="shortcut icon" href="image/foodnow_icon.png" sizes="32x32" type="image/x-icon">
 <body>
     <?php include 'parts/navbar.php'; ?>
 

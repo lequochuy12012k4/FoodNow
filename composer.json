@@ -2,6 +2,7 @@
     "require": {
         "google/apiclient": "^2.18",
         "chillerlan/php-qrcode": "^5.0",
-        "endroid/qr-code": "^6.0"
+        "endroid/qr-code": "^6.0",
+        "phpmailer/phpmailer": "^6.10"
     }
 }

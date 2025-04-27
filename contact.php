@@ -1,6 +1,7 @@
 <?php include 'parts/header.php' ?>
 <link rel="stylesheet" href="css/contact.css">
 <title>Liên hệ</title>
+<link rel="shortcut icon" href="image/foodnow_icon.png" sizes="32x32" type="image/x-icon">
 <body>
     <?php
     include 'parts/navbar.php'; // Include your standard header

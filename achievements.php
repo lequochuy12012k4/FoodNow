@@ -5,6 +5,7 @@ session_start();
 ?>
 <?php include 'parts/header.php';?>
 <title>Thành tựu</title>
+<link rel="shortcut icon" href="image/foodnow_icon.png" sizes="32x32" type="image/x-icon">
 <body>
 
     <?php include 'parts/navbar.php';?>

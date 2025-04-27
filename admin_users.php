@@ -242,6 +242,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FoodNow Admin - Quản lý Người dùng</title>
     <link rel="stylesheet" href="css/admin.css">
+    <link rel="shortcut icon" href="image/foodnow_icon.png" sizes="32x32" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -424,7 +425,6 @@ try {
                     <li><a href="admin_food.php"><i class="fas fa-utensils"></i> <span>Quản lý Món ăn</span></a></li>
                     <li><a href="admin_order.php"><i class="fas fa-receipt"></i> <span>Quản lý Đơn hàng</span></a></li>
                     <li class="active"><a href="admin_users.php"><i class="fas fa-users"></i> <span>Quản lý Người dùng</span></a></li>
-                    <li><a href="admin_promotions.php"><i class="fas fa-tags fa-fw"></i> <span>Quản lý Khuyến mãi</span></a></li>
                     <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> <span>Đăng xuất</span></a></li>
                 </ul>
             </nav>

@@ -1,238 +1,106 @@
 <?php
-    // Start session if needed for other parts
-    // session_start();
-
-    // --- 1. Include DB Config & Connect ---
-    require_once 'config/db_config.php'; // Adjust path if needed
-
-    // Establish PDO connection
-    $pdo = null;
-    $db_error = '';
-    try {
-        $dsn = "mysql:host=$servername;dbname=$databaseName;charset=utf8mb4";
-        $options = [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-        ];
-        $pdo = new PDO($dsn, $username, $password, $options);
-    } catch (\PDOException $e) {
-        $db_error = "Lỗi kết nối CSDL: Không thể tải danh sách khuyến mãi.";
-        error_log("Database Connection Error in promotions.php: " . $e->getMessage());
-    }
-
-    // --- 2. Fetch ONLY Promoted Food Items ---
-    $promo_foods = []; // Array to store foods with active promotions
-    if ($pdo) {
-        try {
-            // SQL Query to select items with either a discount price OR a discount percent > 0
-            $sql = "SELECT id, name, description, price, image, discount_price, discount_percent
-                    FROM food_data
-                    WHERE (discount_price IS NOT NULL AND discount_price > 0)
-                       OR (discount_percent IS NOT NULL AND discount_percent > 0)
-                    ORDER BY name ASC"; // Or order by discount type, etc.
-
-            $stmt = $pdo->query($sql); // Execute the query
-            $promo_foods = $stmt->fetchAll(); // Fetch all matching rows
-
-        } catch (\PDOException $e) {
-            $db_error = "Lỗi truy vấn danh sách khuyến mãi: " . $e->getMessage();
-            error_log("Database Query Error (Promo Fetch) in promotions.php: " . $e->getMessage());
-            $promo_foods = []; // Ensure array is empty on error
-        }
-    }
-
-    // --- 3. Helper Function for Image Path (Same as before) ---
-    $uploadDirWeb = 'uploads/';
-    $placeholderImage = 'images/placeholder-food.png';
-
-    function get_promo_image_path($foodName, $imageFilename, $uploadDir, $placeholder) {
-        // Note: This simpler version doesn't need the imageMap anymore
-        if (!empty($imageFilename)) {
-            $fullPath = rtrim($uploadDir, '/') . '/' . $imageFilename;
-             return htmlspecialchars($fullPath);
-        }
-        return htmlspecialchars($placeholder);
-    }
-
-    // Include static parts AFTER fetching data
-    include 'parts/header.php';
-    include 'parts/navbar.php';
-
+include 'parts/header.php';
 ?>
-
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Khuyến Mãi Hấp Dẫn - FoodNow</title>
-    <!-- CSS Includes from header.php -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Paste the same CSS styles from the previous "card layout" example here */
-        /* It defines the layout for .promo-card, .promotions-grid etc. */
-         body { background-color: #212529; color: #e9ecef; font-family: 'Montserrat', sans-serif; margin: 0; padding: 0; }
-        main.promotions-container { max-width: 1200px; margin: 10rem auto 2rem auto; padding: 1rem 1.5rem; }
-        .page-title { text-align: center; font-size: 2.5em; font-weight: 700; color: #ffc107; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px; }
-        .page-subtitle { text-align: center; font-size: 1.1em; color: #adb5bd; margin-bottom: 3rem; }
-        .promotions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
-        .promo-card { background-color: #343a40; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; position: relative; transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
-        .promo-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); }
-        .card-image { position: relative; width: 100%; height: 200px; overflow: hidden; background-color: #495057; }
-        .card-image img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s ease; }
-        .promo-card:hover .card-image img { transform: scale(1.05); }
-        .discount-badge { position: absolute; top: 10px; left: 10px; background-color: #dc3545; color: #fff; padding: 5px 10px; font-size: 0.9em; font-weight: 600; border-radius: 4px; z-index: 1; }
-        .card-content { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
-        .card-name { font-size: 1.25em; font-weight: 600; color: #f8f9fa; margin: 0 0 10px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .card-description { font-size: 0.9em; color: #ced4da; margin-bottom: 15px; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; flex-grow: 1; }
-        .card-price { margin-top: auto; margin-bottom: 15px; display: flex; align-items: baseline; gap: 10px; }
-        .original-price { font-size: 0.95em; color: #adb5bd; text-decoration: line-through; }
-        .discounted-price { font-size: 1.2em; font-weight: 700; color: #ffc107; }
-        .card-actions { padding: 0 20px 20px 20px; }
-        .add-to-cart-btn { display: block; width: 100%; padding: 10px 15px; background-color: #198754; color: #fff; text-align: center; border: none; border-radius: 5px; font-weight: 500; font-size: 1em; cursor: pointer; transition: background-color 0.2s ease; }
-        .add-to-cart-btn i { margin-right: 8px; }
-        .add-to-cart-btn:hover { background-color: #157347; }
-        .db-error-message, .no-promotions-message { background-color: #343a40; color: #adb5bd; border: 1px dashed #495057; padding: 20px; margin-bottom: 20px; border-radius: 4px; text-align: center; font-size: 1em;}
-        @media (max-width: 992px) { .promotions-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); } }
-        @media (max-width: 768px) { main.promotions-container { margin-top: 8rem; } .page-title { font-size: 2em; } .promotions-grid { gap: 20px; } .card-name { font-size: 1.15em; } .discounted-price { font-size: 1.1em; } }
-        @media (max-width: 576px) { main.promotions-container { padding: 1rem; } .promotions-grid { grid-template-columns: 1fr; } .card-image { height: 180px; } }
-    </style>
-</head>
+<title>Khuyến Mãi</title>
+<link rel="shortcut icon" href="image/foodnow_icon.png" sizes="32x32" type="image/x-icon">
 <body>
+    <?php
+    include 'parts/navbar.php';
+    include 'parts/slider.php'; // Keep the slider if desired
+    ?>
 
-    <?php // Navbar included above ?>
+    <!-- Promotion Section 1: Sizzling Steak Deal -->
+    <section id="promo-steak" class="content-section image-left">
+        <div class="content-wrapper">
+            <div class="image-container">
+                <img src="uploads/food_6805128b9c918_Gado-gado.jpg" alt="Sizzling Ribeye Steak Special"> <?php // CHANGE IMAGE PATH ?>
+            </div>
+            <div class="text-container">
+                <div class="section-subtitle">Limited Time Offer</div>
+                <h2>Sizzling Ribeye Special</h2>
+                <p>
+                    Indulge in our perfectly grilled 12oz Ribeye steak, served with garlic mashed potatoes and seasonal vegetables. Cooked just the way you like it! A taste of luxury at a promotional price.
+                </p>
+                <p class="promo-price"><strong>Special Price: $24.99</strong> <del>(Reg. $29.99)</del></p> <?php // Added price ?>
+                <a href="menu.php#steak" class="button-primary">Order Now →</a> <?php // Example link, adjust as needed ?>
 
-    <main class="promotions-container">
-        <h1 class="page-title">Khuyến Mãi Hấp Dẫn</h1>
-        <p class="page-subtitle">Đừng bỏ lỡ cơ hội thưởng thức những món ăn ngon với giá cực ưu đãi!</p>
+            </div>
+        </div>
+    </section>
 
-        <!-- Display Database Error if Connection Failed -->
-        <?php if ($db_error): ?>
-            <p class="db-error-message"><?php echo htmlspecialchars($db_error); ?></p>
-        <?php endif; ?>
+    <!-- Promotion Section 2: Gourmet Burger Combo -->
+    <section id="promo-burger" class="content-section image-right dark-bg"> <?php // Alternating image side and dark background ?>
+        <div class="content-wrapper">
+             <div class="image-container">
+                <img src="uploads/food_6805118d2eefa_Sò huyết Tứ Xuyên.jpg" alt="Gourmet Burger Combo Deal"> <?php // CHANGE IMAGE PATH ?>
+            </div>
+            <div class="text-container">
+                <div class="section-subtitle">Weekend Deal</div>
+                <h2>Ultimate Steakhouse Burger Combo</h2>
+                <p>
+                    Sink your teeth into our signature 8oz beef patty, topped with aged cheddar, crispy bacon, caramelized onions, and our secret sauce, all on a brioche bun. Comes with a side of our famous crispy fries!
+                </p>
+                 <p class="promo-price"><strong>Combo Price: $15.95</strong><del>(Reg. $29.99)</del></p> <?php // Added price ?>
+                <a href="menu.php#burger" class="button-primary">Grab the Deal →</a> <?php // Example link, adjust as needed ?>
+            </div>
+        </div>
+    </section>
 
-        <div class="promotions-grid">
+    <!-- Promotion Section 3: Seafood Pasta Delight -->
+    <section id="promo-pasta" class="content-section image-left"> <?php // Alternating image side ?>
+        <div class="content-wrapper">
+            <div class="image-container">
+                <img src="uploads/food_68051177cc1ed_Càng cua bách hoa .jpg" alt="Seafood Pasta Promotion"> <?php // CHANGE IMAGE PATH ?>
+            </div>
+            <div class="text-container">
+                <div class="section-subtitle">Chef's Recommendation</div>
+                <h2>Creamy Seafood Linguine</h2>
+                <p>
+                   A delightful mix of fresh shrimp, mussels, and calamari tossed in a creamy white wine sauce with linguine pasta. Served with garlic bread. A perfect taste of the sea.
+                </p>
+                <p class="promo-price"><strong>Featured Dish: $19.50</strong><del>(Reg. $29.99)</del></p> <?php // Added price ?>
+                <a href="menu.php#pasta" class="button-secondary">View Details →</a> <?php // Example link and button style, adjust as needed ?>
+            </div>
+        </div>
+    </section>
 
-            <?php if (!$db_error && !empty($promo_foods)): ?>
-                <?php foreach ($promo_foods as $food): ?>
-                    <?php
-                        // Calculate final price and badge text
-                        $original_price = (float)($food['price'] ?? 0);
-                        $discount_price = isset($food['discount_price']) ? (float)$food['discount_price'] : null;
-                        $discount_percent = isset($food['discount_percent']) ? (int)$food['discount_percent'] : null;
-                        $final_price = $original_price; // Default to original
-                        $badge_text = '';
+     <!-- Promotion Section 4: Appetizer Sampler Platter -->
+    <section id="promo-appetizer" class="content-section image-right"> <?php // Alternating image side ?>
+        <div class="content-wrapper">
+             <div class="image-container">
+                <img src="uploads/food_68051275f3de3_satay.jpg" alt="Appetizer Sampler Platter Offer"> <?php // CHANGE IMAGE PATH ?>
+            </div>
+            <div class="text-container">
+                <div class="section-subtitle">Share & Enjoy</div>
+                <h2>Appetizer Sampler Platter</h2>
+                <p>
+                    Perfect for sharing! Enjoy a selection of our most popular starters: crispy calamari, buffalo wings, mozzarella sticks, and loaded potato skins. Comes with dipping sauces.
+                </p>
+                 <p class="promo-price"><strong>Shareable Price: $18.00</strong><del>(Reg. $29.99)</del></p> <?php // Added price ?>
+                <a href="menu.php#appetizers" class="button-primary">Add to Order →</a> <?php // Example link, adjust as needed ?>
+            </div>
+        </div>
+    </section>
 
-                        if ($discount_price !== null && $discount_price > 0) {
-                            $final_price = $discount_price;
-                            $discount_amount = $original_price - $discount_price;
-                            if ($discount_amount > 0) {
-                                $badge_text = '-' . number_format($discount_amount, 0, ',', '.') . 'đ';
-                            }
-                        } elseif ($discount_percent !== null && $discount_percent > 0) {
-                            $final_price = $original_price * (1 - ($discount_percent / 100));
-                            $badge_text = '-' . $discount_percent . '%';
-                        } else {
-                            // This case shouldn't happen due to SQL WHERE clause,
-                            // but handle it just in case
-                            continue; // Skip items that somehow got through without a valid discount
-                        }
+    <!-- Optional: Call to Action Section -->
+    <section id="view-menu" class="content-section full-width-background" style="background-image: url('image/img6.jpg');"> <?php // Keep or change background image ?>
+        <div class="content-wrapper centered-content">
+            <div class="text-container">
+                <div class="section-subtitle">Explore More</div>
+                <h2>Check Out Our Full Menu</h2>
+                <p>Discover all the delicious dishes we have to offer, from classic steaks to fresh salads and decadent desserts.</p>
+                <a href="menu.php" class="button-primary">View Full Menu</a> <?php // Link to your main menu page ?>
+            </div>
+        </div>
+        <?php /* Removed the footer-info blocks from here, they belong in the main footer */ ?>
+    </section>
 
-                        $image_path = get_promo_image_path($food['name'], $food['image'] ?? null, $uploadDirWeb, $placeholderImage);
-                        $food_name = htmlspecialchars($food['name']);
-                        $description = htmlspecialchars($food['description'] ?? 'Chưa có mô tả.'); // Add description if available
-                        $food_id = htmlspecialchars($food['id']); // For Add to Cart button
-
-                    ?>
-                    <div class="promo-card">
-                        <div class="card-image">
-                            <img src="<?php echo $image_path; ?>" alt="<?php echo $food_name; ?>">
-                            <?php if ($badge_text): ?>
-                                <span class="discount-badge"><?php echo $badge_text; ?></span>
-                            <?php endif; ?>
-                        </div>
-                        <div class="card-content">
-                            <h3 class="card-name"><?php echo $food_name; ?></h3>
-                            <p class="card-description"><?php echo $description; ?></p>
-                             <div class="card-price">
-                                <?php if ($final_price < $original_price): // Only show original if there's a discount ?>
-                                    <span class="original-price"><?php echo number_format($original_price, 0, ',', '.'); ?>đ</span>
-                                <?php endif; ?>
-                                <span class="discounted-price"><?php echo number_format($final_price, 0, ',', '.'); ?>đ</span>
-                            </div>
-                        </div>
-                        <div class="card-actions">
-                             <!-- Add data attributes for JS cart functionality later -->
-                             <button class="add-to-cart-btn"
-                                     data-food-id="<?php echo $food_id; ?>"
-                                     data-food-name="<?php echo $food_name; ?>"
-                                     data-final-price="<?php echo $final_price; ?>">
-                                 <i class="fas fa-cart-plus"></i> Thêm vào giỏ
-                             </button>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-
-            <?php elseif (!$db_error): ?>
-                <p class="no-promotions-message">Hiện tại chưa có món ăn nào đang được khuyến mãi. Vui lòng quay lại sau!</p>
-            <?php endif; ?>
-            <?php // DB error message is handled above the grid ?>
-
-        </div> <!-- /.promotions-grid -->
-    </main>
-
-    <?php include 'parts/footer.php'; ?>
-
-    <!-- JS Includes -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="js/script.js"></script> <!-- Your main site script -->
-    <script>
-        // Add JS specifically for this page, e.g., Add to Cart handling
-        $(document).ready(function() {
-            $('.add-to-cart-btn').on('click', function() {
-                const foodId = $(this).data('food-id');
-                const foodName = $(this).data('food-name');
-                const finalPrice = $(this).data('final-price');
-                const quantity = 1; // Default quantity
-
-                console.log(`Adding to cart: ID=${foodId}, Name=${foodName}, Price=${finalPrice}, Qty=${quantity}`);
-
-                // --- AJAX Call to Add to Cart ---
-                // This requires a backend script (e.g., cart_action.php)
-                $.ajax({
-                    url: 'cart_action.php', // Your backend cart handler
-                    type: 'POST',
-                    data: {
-                        action: 'add_item', // Define an action name
-                        food_id: foodId,
-                        quantity: quantity
-                        // Price is usually determined server-side based on food_id
-                        // to prevent manipulation, but you *could* send finalPrice
-                        // if your backend verifies it. For now, sending only ID is safer.
-                    },
-                    dataType: 'json', // Expect JSON response { success: true/false, message: '...', cart_count: X }
-                    success: function(response) {
-                        if (response.success) {
-                            // Update cart icon/count in navbar (requires navbar JS)
-                            if (typeof updateCartCount === 'function') { // Check if function exists
-                                updateCartCount(response.cart_count);
-                            }
-                            // Optionally show a brief success message near the button
-                            alert(foodName + ' đã được thêm vào giỏ hàng!'); // Simple alert for now
-                        } else {
-                             alert('Lỗi thêm vào giỏ hàng: ' + (response.message || 'Vui lòng thử lại.'));
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Add to cart AJAX error:", status, error);
-                        alert('Đã xảy ra lỗi kết nối. Không thể thêm vào giỏ hàng.');
-                    }
-                });
-                // --- End AJAX Call ---
-            });
-        });
-    </script>
-
+    <footer>
+    <?php
+    // Ensure your footer.php contains the necessary contact/location info
+    include 'parts/footer.php';
+    ?>
+    </footer>
 </body>
+
 </html>
