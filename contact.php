@@ -42,11 +42,6 @@
     </main>
 
     <?php include 'parts/footer.php' ?>
-    <footer>
-        <div class="container">
-            <p>© 2024 FoodNow. Bảo lưu mọi quyền.</p>
-        </div>
-    </footer>
 
 </body>
 </html>
