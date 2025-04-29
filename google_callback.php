@@ -79,7 +79,7 @@ if (isset($_GET['code'])) {
 
                     // --- Set Session Variables ---
                     $_SESSION["loggedin"] = true;
-                    $_SESSION["user_id"] = $db_id;
+                    $_SESSION["id"] = $db_id;
                     $_SESSION["username"] = $db_username; // Keep original username
                     $_SESSION["full_name"] = $db_full_name; // Keep original full_name
                     $_SESSION["role"] = $db_role;
@@ -111,7 +111,7 @@ if (isset($_GET['code'])) {
 
                             // --- Set Session Variables ---
                             $_SESSION["loggedin"] = true;
-                            $_SESSION["user_id"] = $new_user_id;
+                            $_SESSION["id"] = $new_user_id;
                             $_SESSION["username"] = $new_username;
                             $_SESSION["full_name"] = $full_name;
                             $_SESSION["role"] = $new_role;

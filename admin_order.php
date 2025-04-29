@@ -470,6 +470,7 @@ if ($pdo) {
                     <li><a href="admin_food.php"><i class="fas fa-utensils fa-fw"></i> <span>Quản lý Món ăn</span></a></li>
                     <li class="active"><a href="admin_order.php"><i class="fas fa-receipt fa-fw"></i> <span>Quản lý Đơn hàng</span></a></li>
                     <li><a href="admin_users.php"><i class="fas fa-users fa-fw"></i> <span>Quản lý Người dùng</span></a></li>
+                    <li><a href="admin_user_feedback.php"><i class="fas fa-comments"></i><span>Quản lý góp ý</span></a></li>
                     <li><a href="logout.php"><i class="fas fa-sign-out-alt fa-fw"></i> <span>Đăng xuất</span></a></li>
                 </ul>
             </nav>

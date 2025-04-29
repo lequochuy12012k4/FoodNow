@@ -39,13 +39,13 @@ $search_term = trim($_GET['search'] ?? '');
 $selected_status = trim($_GET['status_filter'] ?? '');
 
 // --- Replicate Database Fetch Logic ---
-$sql = "SELECT o.id AS item_row_id, o.user_id, o.username AS order_table_username,
+$sql = "SELECT o.id AS item_row_id, o.id, o.username AS order_table_username,
                o.food_id, o.food_name, o.quantity, o.price_at_add,
                o.status, o.added_at,
                o.recipient_name, o.recipient_phone, o.recipient_address, o.payment_method,
                u.username AS user_table_username, u.full_name AS customer_full_name
         FROM orders o
-        LEFT JOIN users u ON o.user_id = u.id
+        LEFT JOIN users u ON o.id = u.id
         WHERE o.status != 'cart'";
 
 $params = [];
@@ -61,7 +61,7 @@ if (!empty($search_term)) {
     $params[':search_term_phone'] = $search_like;
 }
 
-$sql .= " ORDER BY o.user_id, o.recipient_name, o.recipient_phone, o.payment_method, o.added_at DESC";
+$sql .= " ORDER BY o.id, o.recipient_name, o.recipient_phone, o.payment_method, o.added_at DESC";
 
 // --- Execute Query and Fetch Items ---
 $order_items_list = [];
@@ -77,16 +77,16 @@ try {
     // --- Replicate Grouping Logic ---
      if (!empty($order_items_list)) {
         foreach ($order_items_list as $item) {
-             $user_id_key = $item['user_id'] ?? 'guest';
+             $id_key = $item['id'] ?? 'guest';
              $recipient_name_key = strtolower(trim($item['recipient_name'] ?? ''));
              $recipient_phone_key = strtolower(trim($item['recipient_phone'] ?? ''));
              $recipient_address_key = strtolower(trim($item['recipient_address'] ?? ''));
              $payment_method_key = strtolower(trim($item['payment_method'] ?? 'unknown'));
-             $group_key = $user_id_key . '_' . md5($recipient_name_key) . '_' . md5($recipient_phone_key) . '_' . md5($recipient_address_key) . '_' . $payment_method_key;
+             $group_key = $id_key . '_' . md5($recipient_name_key) . '_' . md5($recipient_phone_key) . '_' . md5($recipient_address_key) . '_' . $payment_method_key;
 
              if (!isset($grouped_orders[$group_key])) {
                   $grouped_orders[$group_key] = [
-                     'user_id' => $item['user_id'], 'order_table_username' => $item['order_table_username'],
+                     'id' => $item['id'], 'order_table_username' => $item['order_table_username'],
                      'user_table_username' => $item['user_table_username'], 'customer_full_name' => $item['customer_full_name'],
                      'recipient_name' => $item['recipient_name'], 'recipient_phone' => $item['recipient_phone'],
                      'recipient_address' => $item['recipient_address'], 'payment_method' => $item['payment_method'],
@@ -143,7 +143,7 @@ try {
             if (!empty($order['customer_full_name'])) $customer_display_name = $order['customer_full_name'];
             elseif (!empty($order['user_table_username'])) $customer_display_name = $order['user_table_username'];
             elseif (!empty($order['order_table_username'])) $customer_display_name = $order['order_table_username'];
-            elseif ($order['user_id']) $customer_display_name = 'User ID: ' . htmlspecialchars($order['user_id']);
+            elseif ($order['id']) $customer_display_name = 'User ID: ' . htmlspecialchars($order['id']);
 
             $pm_class = ''; $payment_method_display = strtoupper(htmlspecialchars($order['payment_method'] ?? 'N/A'));
             if ($payment_method_display === 'COD') $pm_class = 'pm-cod'; elseif ($payment_method_display === 'ONLINE') $pm_class = 'pm-online';
