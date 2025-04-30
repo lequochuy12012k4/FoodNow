@@ -22,7 +22,7 @@ include 'parts/header.php';
                     Indulge in our perfectly grilled 12oz Ribeye steak, served with garlic mashed potatoes and seasonal vegetables. Cooked just the way you like it! A taste of luxury at a promotional price.
                 </p>
                 <p class="promo-price"><strong>Special Price: $24.99</strong> <del>(Reg. $29.99)</del></p> <?php // Added price ?>
-                <a href="menu.php#steak" class="button-primary">Order Now →</a> <?php // Example link, adjust as needed ?>
+                <a href="food_detail.php?id=10" class="button-primary">Order Now →</a> <?php // Example link, adjust as needed ?>
 
             </div>
         </div>
@@ -41,7 +41,7 @@ include 'parts/header.php';
                     Sink your teeth into our signature 8oz beef patty, topped with aged cheddar, crispy bacon, caramelized onions, and our secret sauce, all on a brioche bun. Comes with a side of our famous crispy fries!
                 </p>
                  <p class="promo-price"><strong>Combo Price: $15.95</strong><del>(Reg. $29.99)</del></p> <?php // Added price ?>
-                <a href="menu.php#burger" class="button-primary">Grab the Deal →</a> <?php // Example link, adjust as needed ?>
+                <a href="food_detail.php?id=5" class="button-primary">Grab the Deal →</a> <?php // Example link, adjust as needed ?>
             </div>
         </div>
     </section>
@@ -59,7 +59,7 @@ include 'parts/header.php';
                    A delightful mix of fresh shrimp, mussels, and calamari tossed in a creamy white wine sauce with linguine pasta. Served with garlic bread. A perfect taste of the sea.
                 </p>
                 <p class="promo-price"><strong>Featured Dish: $19.50</strong><del>(Reg. $29.99)</del></p> <?php // Added price ?>
-                <a href="menu.php#pasta" class="button-secondary">View Details →</a> <?php // Example link and button style, adjust as needed ?>
+                <a href="food_detail.php?id=4" class="button-primary">View Details →</a> <?php // Example link and button style, adjust as needed ?>
             </div>
         </div>
     </section>
@@ -77,7 +77,7 @@ include 'parts/header.php';
                     Perfect for sharing! Enjoy a selection of our most popular starters: crispy calamari, buffalo wings, mozzarella sticks, and loaded potato skins. Comes with dipping sauces.
                 </p>
                  <p class="promo-price"><strong>Shareable Price: $18.00</strong><del>(Reg. $29.99)</del></p> <?php // Added price ?>
-                <a href="menu.php#appetizers" class="button-primary">Add to Order →</a> <?php // Example link, adjust as needed ?>
+                <a href="food_detail.php?id=9" class="button-primary">Add to Order →</a> <?php // Example link, adjust as needed ?>
             </div>
         </div>
     </section>
@@ -89,7 +89,7 @@ include 'parts/header.php';
                 <div class="section-subtitle">Explore More</div>
                 <h2>Check Out Our Full Menu</h2>
                 <p>Discover all the delicious dishes we have to offer, from classic steaks to fresh salads and decadent desserts.</p>
-                <a href="menu.php" class="button-primary">View Full Menu</a> <?php // Link to your main menu page ?>
+                <a href="food.php" class="button-primary">View Full Menu</a> <?php // Link to your main menu page ?>
             </div>
         </div>
         <?php /* Removed the footer-info blocks from here, they belong in the main footer */ ?>
