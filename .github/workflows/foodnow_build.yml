@@ -9,7 +9,7 @@ on:
       - main # Chạy workflow khi có pull request đến nhánh 'main'
 
 env:
-  DOCKER_IMAGE_NAME: lequochuy2004/foodno # Thay thế bằng tên người dùng Docker Hub của bạn và tên repo
+  DOCKER_IMAGE_NAME: lequochuy2004/foodnow # Thay thế bằng tên người dùng Docker Hub của bạn và tên repo
 
 jobs:
   build:
