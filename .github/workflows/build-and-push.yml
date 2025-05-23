@@ -1,108 +1,146 @@
-name: Build and Push Docker Image
+# Tên của workflow này hiển thị trong giao diện GitHub Actions
+name: PHP CI/CD Pipeline
 
+# Định nghĩa các sự kiện kích hoạt workflow này
 on:
   push:
     branches:
-      - master # Kích hoạt workflow khi có push lên nhánh 'main'
+      - main # Chạy khi có push lên branch 'main'
+      - develop # Chạy khi có push lên branch 'develop'
   pull_request:
     branches:
-      - master # Chạy workflow khi có pull request đến nhánh 'main'
+      - main # Chạy khi có PR đến branch 'main'
+      - develop # Chạy khi có PR đến branch 'develop'
+  workflow_dispatch: # Cho phép chạy workflow thủ công từ GitHub UI
 
-env:
-  # Thay thế 'lequochuy2004' bằng TÊN ĐĂNG NHẬP Docker Hub của bạn
-  DOCKER_IMAGE_NAME: lequochuy2004/foodnow
-
+# Định nghĩa các công việc (jobs) trong workflow
 jobs:
+  # Job đầu tiên: Kiểm tra (Test)
   test:
-    name: Run PHP Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    name: Run PHP Tests & Static Analysis
+    runs-on: ubuntu-latest # Chạy trên môi trường Ubuntu mới nhất
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ env.PHP_VERSION }}
-          extensions: mbstring, xml, dom, pdo, pdo_mysql
-          tools: composer
-
-      # BƯỚC NÀY QUAN TRỌNG: Xóa cache cũ nếu có
-      - name: Clear previous Composer cache (if any)
-        run: rm -rf ${{ steps.composer-cache.outputs.cache-path }} # Sử dụng output từ bước cache nếu có
-        continue-on-error: true # Tiếp tục nếu không có cache cũ
-
-      # HOẶC XÓA THƯ MỤC CACHE MẶC ĐỊNH CỦA COMPOSER
-      # - name: Clear Composer's default cache directory
-      #   run: rm -rf $(composer config cache-dir)
-      #   continue-on-error: true
-
-      - name: Cache Composer packages
-        id: composer-cache
-        uses: actions/cache@v4
-        with:
-          path: vendor
-          # Sử dụng một key khác để đảm bảo cache mới được tạo
-          key: ${{ runner.os }}-php-${{ env.PHP_VERSION }}-${{ hashFiles('**/composer.lock') }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-php-${{ env.PHP_VERSION }}-${{ hashFiles('**/composer.lock') }}-
-
-      - name: Validate composer.json and composer.lock
-        run: composer validate --strict
-
-      - name: Install dependencies
-        # Bỏ điều kiện if đi để luôn chạy install, đặc biệt khi đang debug
-        run: composer install --prefer-dist --no-progress --no-suggest --verbose # Thêm --verbose
-
-      # THÊM BƯỚC DEBUG NGAY SAU KHI CÀI ĐẶT
-      - name: List PHPUnit directory contents (DEBUG)
-        run: |
-          echo "Listing vendor/phpunit/phpunit:"
-          ls -la vendor/phpunit/phpunit/
-          echo "Listing vendor/phpunit/phpunit/src (if exists):"
-          ls -la vendor/phpunit/phpunit/src/ || echo "vendor/phpunit/phpunit/src/ does not exist"
-        continue-on-error: true
-
-      - name: Run PHPUnit tests
-        run: vendor/bin/phpunit
-        # Hoặc nếu bạn có script trong composer.json:
-        # run: composer test
-
-      # Ví dụ: Chạy PHP Lint (kiểm tra cú pháp)
-      - name: Run PHP Lint
-        run: find . -name '*.php' -not -path "./vendor/*" -exec php -l {} \;
-        # Hoặc nếu bạn có script trong composer.json:
-        # run: composer lint
-
-  build_and_push:
-    name: Build and Push Docker Image
-    runs-on: ubuntu-latest
-    needs: test # Job này chỉ chạy SAU KHI job 'test' hoàn thành thành công
-
-    # Chỉ build và push image khi push lên nhánh master, không phải khi tạo PR
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    # Sử dụng ma trận để chạy các test trên nhiều phiên bản PHP khác nhau
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2', '8.3'] # Các phiên bản PHP để kiểm tra
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4 # Lấy mã nguồn từ repository
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+    - name: Setup PHP ${{ matrix.php-version }}
+      uses: shivammathur/setup-php@v2 # Action để cài đặt PHP
+      with:
+        php-version: ${{ matrix.php-version }} # Phiên bản PHP từ ma trận
+        extensions: bcmath, intl, pdo_mysql, zip, gd # Các PHP extension cần thiết
+        ini-values: memory_limit=512M # Tùy chỉnh php.ini
+        tools: composer:v2, php-cs-fixer, phpstan # Cài đặt các công cụ PHP
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Validate composer.json and composer.lock
+      run: composer validate --strict # Kiểm tra tính hợp lệ của file composer
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ${{ env.DOCKER_IMAGE_NAME }}:latest
-            ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+    - name: Install Composer dependencies
+      run: composer install --no-interaction --prefer-dist --optimize-autoloader # Cài đặt dependencies
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v4 # Cache thư mục vendor để tăng tốc độ
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-
+
+    - name: Run PHPUnit Unit Tests
+      run: ./vendor/bin/phpunit --testsuite Unit # Chạy các bài kiểm tra unit (giả sử có testsuite "Unit")
+
+    - name: Run PHP_CodeSniffer (PSR-12 Check)
+      run: ./vendor/bin/phpcs --standard=PSR12 src/ # Kiểm tra chuẩn code PSR-12 trong thư mục src/
+
+    - name: Run PHPStan (Static Analysis)
+      run: ./vendor/bin/phpstan analyse --memory-limit=1G # Phân tích tĩnh code với PHPStan
+
+    - name: Run Composer Audit for vulnerabilities
+      run: composer audit # Kiểm tra các lỗ hổng bảo mật trong dependencies
+
+  # Job thứ hai: Xây dựng (Build) và đẩy Docker Image
+  build:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest # Chạy trên môi trường Ubuntu mới nhất
+    needs: test # Job này chỉ chạy khi job 'test' hoàn thành thành công
+
+    # Các biến môi trường cho Docker build
+    env:
+      DOCKER_IMAGE_NAME: lequochuy2004/foodnow:latest # Thay thế bằng tên người dùng Docker Hub và tên ứng dụng của bạn
+      DOCKER_IMAGE_TAG: ${{ github.sha }} # Tag image bằng SHA của commit
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4 # Lấy mã nguồn
+
+    - name: Setup PHP 8.2 for Build
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2' # Chọn một phiên bản PHP cụ thể cho quá trình build
+        extensions: bcmath, intl, pdo_mysql, zip, gd
+        tools: composer:v2
+
+    - name: Install Composer dependencies (Production)
+      # Cài đặt dependencies mà không bao gồm các gói dev (cho môi trường production)
+      run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+    # Ví dụ: Nếu bạn có tài nguyên frontend (JS/CSS) cần biên dịch
+    # - name: Setup Node.js
+    #   uses: actions/setup-node@v4
+    #   with:
+    #     node-version: '20' # Phiên bản Node.js cần thiết
+    # - name: Install Node.js dependencies
+    #   run: npm install # Cài đặt Node.js dependencies
+    # - name: Build Frontend Assets
+    #   run: npm run prod # Lệnh build assets (ví dụ: cho Laravel Mix, Webpack)
+
+    # --- Các bước Docker mới ---
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3 # Thiết lập Buildx để xây dựng Docker image hiệu quả
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3 # Đăng nhập vào Docker Hub
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }} # Sử dụng GitHub Secret cho tên người dùng
+        password: ${{ secrets.DOCKER_PASSWORD }} # Sử dụng GitHub Secret cho mật khẩu/token
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5 # Xây dựng và đẩy Docker image
+      with:
+        context: . # Ngữ cảnh build là thư mục gốc của repository
+        push: true # Đẩy image lên Docker Hub
+        tags: |
+          ${{ env.DOCKER_IMAGE_NAME }}:latest # Gắn tag 'latest'
+          ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }} # Gắn tag bằng SHA của commit
+        # file: ./Dockerfile # Nếu Dockerfile của bạn không ở thư mục gốc, hãy chỉ định đường dẫn ở đây
+
+    # --- Các bước tạo và upload artifact zip (tùy chọn, nếu bạn vẫn muốn cả 2) ---
+    - name: Create Build Artifact (Zip)
+      # Tạo một file zip chứa toàn bộ ứng dụng đã được build
+      # Loại trừ các file không cần thiết cho production (ví dụ: .git, node_modules, tests)
+      run: |
+        zip -r app-build.zip . \
+          -x ".git/*" \
+          -x "node_modules/*" \
+          -x "tests/*" \
+          -x ".github/*" \
+          -x "composer.json" \
+          -x "composer.lock" \
+          -x "phpunit.xml*" \
+          -x "phpcs.xml*" \
+          -x "phpstan.neon*" \
+          -x ".env*" \
+          -x "README.md" \
+          -x "Dockerfile" # Loại trừ Dockerfile khỏi zip nếu bạn không muốn nó trong artifact
+
+    - name: Upload Build Artifact (Zip)
+      uses: actions/upload-artifact@v4 # Upload file zip làm artifact
+      with:
+        name: php-application-build # Tên của artifact
+        path: app-build.zip # Đường dẫn đến file artifact
+        retention-days: 7 # Giữ artifact trong 7 ngày
