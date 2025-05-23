@@ -5,11 +5,11 @@ name: PHP CI/CD Pipeline
 on:
   push:
     branches:
-      - main # Chạy khi có push lên branch 'main'
+      - master # Chạy khi có push lên branch 'main'
       - develop # Chạy khi có push lên branch 'develop'
   pull_request:
     branches:
-      - main # Chạy khi có PR đến branch 'main'
+      - master # Chạy khi có PR đến branch 'main'
       - develop # Chạy khi có PR đến branch 'develop'
   workflow_dispatch: # Cho phép chạy workflow thủ công từ GitHub UI
 
