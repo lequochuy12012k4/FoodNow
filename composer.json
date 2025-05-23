@@ -1,8 +1,32 @@
 {
+    "name": "lequochuy2004/foodnow", // Hoặc tên khác phù hợp với project của bạn
+    "description": "A food ordering application.", // Mô tả project của bạn
+    "type": "project", // Hoặc "library" nếu là thư viện
+    "license": "proprietary", // Hoặc một giấy phép open-source như "MIT", "Apache-2.0", etc.
     "require": {
+        "php": "^8.1",
         "chillerlan/php-qrcode": "^5.0",
         "endroid/qr-code": "^6.0",
         "google/apiclient": "^2.18",
         "phpmailer/phpmailer": "^6.10"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5" // Ví dụ
+        // ... các thư viện dev khác
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/" // Ví dụ
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/" // Ví dụ
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "lint": "find . -name '*.php' -not -path \"./vendor/*\" -exec php -l {} \\;"
     }
+    // ... các cấu hình khác
 }
