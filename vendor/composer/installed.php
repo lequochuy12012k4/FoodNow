@@ -3,7 +3,7 @@
         'name' => 'lequochuy2004/foodnow',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '4ae3992acc60ccbfc1d5d625b99a6adb616c344d',
+        'reference' => 'd64ae6fde639c3ab6c59d36873a9493e7284807e',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -130,7 +130,7 @@
         'lequochuy2004/foodnow' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '4ae3992acc60ccbfc1d5d625b99a6adb616c344d',
+            'reference' => 'd64ae6fde639c3ab6c59d36873a9493e7284807e',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
