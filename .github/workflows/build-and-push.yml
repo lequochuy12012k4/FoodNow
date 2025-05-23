@@ -13,30 +13,79 @@ env:
   DOCKER_IMAGE_NAME: lequochuy2004/foodnow
 
 jobs:
-  build:
-    runs-on: ubuntu-latest # Chạy job trên runner Ubuntu mới nhất
+  test:
+    name: Run PHP Tests
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4 # Bước này kéo mã nguồn từ repo của bạn
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, dom, pdo, pdo_mysql # Thêm các extension PHP cần thiết cho project của bạn
+          tools: composer # Cài đặt Composer
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict
+
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        if: steps.composer-cache.outputs.cache-hit != 'true' # Chỉ chạy nếu không có cache
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      # ---- THÊM CÁC BƯỚC TEST CỤ THỂ CỦA BẠN VÀO ĐÂY ----
+      # Ví dụ: Chạy PHPUnit tests
+      - name: Run PHPUnit tests
+        run: vendor/bin/phpunit
+        # Hoặc nếu bạn có script trong composer.json:
+        # run: composer test
+
+      # Ví dụ: Chạy PHP Lint (kiểm tra cú pháp)
+      - name: Run PHP Lint
+        run: find . -name '*.php' -not -path "./vendor/*" -exec php -l {} \;
+        # Hoặc nếu bạn có script trong composer.json:
+        # run: composer lint
+
+  build_and_push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test # Job này chỉ chạy SAU KHI job 'test' hoàn thành thành công
+
+    # Chỉ build và push image khi push lên nhánh master, không phải khi tạo PR
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3 # Thiết lập Docker Buildx để build image hiệu quả
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }} # Lấy tên người dùng từ GitHub Secret
-          password: ${{ secrets.DOCKER_PASSWORD }} # Lấy mật khẩu từ GitHub Secret
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: . # Đường dẫn đến Dockerfile (thư mục hiện tại)
-          file: ./Dockerfile # Đường dẫn đến Dockerfile của bạn
-          push: true # Tải image lên registry sau khi build
+          context: .
+          file: ./Dockerfile
+          push: true
           tags: |
             ${{ env.DOCKER_IMAGE_NAME }}:latest
             ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
-          cache-from: type=gha # Tận dụng cache của GitHub Actions để tăng tốc build
-          cache-to: type=gha,mode=max # Lưu cache để sử dụng trong các lần build sau
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
