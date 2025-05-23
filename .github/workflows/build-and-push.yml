@@ -16,7 +16,6 @@ jobs:
   test:
     name: Run PHP Tests
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,27 +24,45 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: mbstring, xml, dom, pdo, pdo_mysql # Thêm các extension PHP cần thiết cho project của bạn
-          tools: composer # Cài đặt Composer
+          extensions: mbstring, xml, dom, pdo, pdo_mysql
+          tools: composer
 
-      - name: Validate composer.json and composer.lock
-        run: composer validate --strict
+      # BƯỚC NÀY QUAN TRỌNG: Xóa cache cũ nếu có
+      - name: Clear previous Composer cache (if any)
+        run: rm -rf ${{ steps.composer-cache.outputs.cache-path }} # Sử dụng output từ bước cache nếu có
+        continue-on-error: true # Tiếp tục nếu không có cache cũ
+
+      # HOẶC XÓA THƯ MỤC CACHE MẶC ĐỊNH CỦA COMPOSER
+      # - name: Clear Composer's default cache directory
+      #   run: rm -rf $(composer config cache-dir)
+      #   continue-on-error: true
 
       - name: Cache Composer packages
         id: composer-cache
         uses: actions/cache@v4
         with:
           path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}-${{ github.run_id }} # Thêm github.run_id để key luôn mới
+          # Sử dụng một key khác để đảm bảo cache mới được tạo
+          key: ${{ runner.os }}-php-${{ env.PHP_VERSION }}-${{ hashFiles('**/composer.lock') }}-${{ github.run_id }}
           restore-keys: |
-            ${{ runner.os }}-php-
+            ${{ runner.os }}-php-${{ env.PHP_VERSION }}-${{ hashFiles('**/composer.lock') }}-
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict
 
       - name: Install dependencies
-        if: steps.composer-cache.outputs.cache-hit != 'true' # Chỉ chạy nếu không có cache
-        run: composer install --prefer-dist --no-progress --no-suggest
+        # Bỏ điều kiện if đi để luôn chạy install, đặc biệt khi đang debug
+        run: composer install --prefer-dist --no-progress --no-suggest --verbose # Thêm --verbose
 
-      # ---- THÊM CÁC BƯỚC TEST CỤ THỂ CỦA BẠN VÀO ĐÂY ----
-      # Ví dụ: Chạy PHPUnit tests
+      # THÊM BƯỚC DEBUG NGAY SAU KHI CÀI ĐẶT
+      - name: List PHPUnit directory contents (DEBUG)
+        run: |
+          echo "Listing vendor/phpunit/phpunit:"
+          ls -la vendor/phpunit/phpunit/
+          echo "Listing vendor/phpunit/phpunit/src (if exists):"
+          ls -la vendor/phpunit/phpunit/src/ || echo "vendor/phpunit/phpunit/src/ does not exist"
+        continue-on-error: true
+
       - name: Run PHPUnit tests
         run: vendor/bin/phpunit
         # Hoặc nếu bạn có script trong composer.json:
