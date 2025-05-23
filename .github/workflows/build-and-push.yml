@@ -36,7 +36,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}-${{ github.run_id }} # Thêm github.run_id để key luôn mới
           restore-keys: |
             ${{ runner.os }}-php-
 
