@@ -1,32 +1,35 @@
-name: Build, Test and Push Docker Image
+name: PHP CI/CD Pipeline
 
 on:
   push:
     branches:
-      - master # Kích hoạt workflow khi có push lên nhánh 'master'
+      - master  # Chạy khi push lên nhánh main
+      - develop # Hoặc nhánh develop, tùy theo quy trình của bạn
   pull_request:
     branches:
-      - master # Chạy workflow khi có pull request đến nhánh 'master'
+      - master
+      - develop
+  workflow_dispatch: # Cho phép chạy thủ công
 
 env:
-  # Thay thế 'lequochuy2004' bằng TÊN ĐĂNG NHẬP Docker Hub của bạn
-  DOCKER_IMAGE_NAME: lequochuy2004/foodnow
-  PHP_VERSION: '8.1' # Chỉ định phiên bản PHP bạn muốn sử dụng
+  DOCKER_IMAGE_NAME: lequochuy2004/foodnow # Thay thế bằng tên image của bạn
 
 jobs:
   test:
-    name: Run PHP Tests
+    name: Run PHPUnit Tests
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        php-versions: ['8.1', '8.2'] # Test trên nhiều phiên bản PHP nếu cần
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up PHP
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ env.PHP_VERSION }}
-          extensions: mbstring, xml, dom, pdo, pdo_mysql # Thêm các extension PHP cần thiết cho project của bạn
+          php-version: ${{ matrix.php-versions }}
+          extensions: mbstring, xml, pdo_mysql, zip, gd, intl # Thêm các extension cần thiết
           tools: composer # Cài đặt Composer
 
       - name: Validate composer.json and composer.lock
@@ -34,7 +37,7 @@ jobs:
 
       - name: Cache Composer packages
         id: composer-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           path: vendor
           key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
@@ -42,50 +45,83 @@ jobs:
             ${{ runner.os }}-php-
 
       - name: Install dependencies
-        if: steps.composer-cache.outputs.cache-hit != 'true' # Chỉ chạy nếu không có cache
+        if: steps.composer-cache.outputs.cache-hit != 'true'
         run: composer install --prefer-dist --no-progress --no-suggest
 
-      # ---- THÊM CÁC BƯỚC TEST CỤ THỂ CỦA BẠN VÀO ĐÂY ----
-      # Ví dụ: Chạy PHPUnit tests
-      - name: Run PHPUnit tests
-        run: vendor/bin/phpunit
-        # Hoặc nếu bạn có script trong composer.json:
-        # run: composer test
+      - name: Run tests (PHPUnit example)
+        run: vendor/bin/phpunit # Hoặc 'php artisan test' nếu dùng Laravel
 
-      # Ví dụ: Chạy PHP Lint (kiểm tra cú pháp)
-      - name: Run PHP Lint
-        run: find . -name '*.php' -not -path "./vendor/*" -exec php -l {} \;
-        # Hoặc nếu bạn có script trong composer.json:
-        # run: composer lint
-
-  build_and_push:
+  build:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    needs: test # Job này chỉ chạy SAU KHI job 'test' hoàn thành thành công
-
-    # Chỉ build và push image khi push lên nhánh master, không phải khi tạo PR
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-
+    needs: test # Chỉ chạy job này nếu job 'test' thành công
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') # Chỉ build khi push lên nhánh cụ thể
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up QEMU (for multi-platform builds, optional)
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Dockerfile # Đường dẫn đến Dockerfile của bạn
           push: true
           tags: |
             ${{ env.DOCKER_IMAGE_NAME }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} # Tag bằng commit SHA
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ github.ref_name }} # Tag bằng tên nhánh (main, develop)
+
+  deploy:
+    name: Deploy to Production/Staging
+    runs-on: ubuntu-latest
+    needs: build # Chỉ chạy job này nếu job 'build' thành công
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' # Chỉ deploy khi push lên nhánh main
+    # Môi trường (environment) có thể dùng để thiết lập protection rules trên GitHub
+    environment:
+      name: production # Hoặc staging
+      url: http://your-app-url.com # URL của ứng dụng sau khi deploy (tùy chọn)
+
+    steps:
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@master # Hoặc chọn phiên bản cụ thể @v0.1.10
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }} # Mặc định cổng 22 nếu không có secret SSH_PORT
+          script: |
+            echo "Starting deployment..."
+            cd ${{ secrets.DEPLOY_PATH || '/var/www/html' }} # Di chuyển đến thư mục deploy
+
+            # Kéo image mới nhất
+            docker pull ${{ env.DOCKER_IMAGE_NAME }}:latest
+
+            # Dừng và xóa container cũ (nếu có)
+            # Thay 'my_php_container' bằng tên container của bạn
+            docker stop my_php_container || true
+            docker rm my_php_container || true
+
+            # Chạy container mới với image vừa kéo
+            # Điều chỉnh các port và volume mapping cho phù hợp
+            docker run -d --name my_php_container \
+              -p 80:80 \
+              -v $(pwd)/.env:/var/www/html/.env \
+              --restart unless-stopped \
+              ${{ env.DOCKER_IMAGE_NAME }}:latest
+
+            # (Tùy chọn) Dọn dẹp các image cũ không còn dùng đến
+            docker image prune -af
+
+            echo "Deployment finished successfully!"
