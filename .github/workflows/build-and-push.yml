@@ -43,7 +43,7 @@ jobs:
             ${{ runner.os }}-composer-
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest
+        run: composer install
 
       # Optional: If you have a .env file, create it from .env.example
       - name: Setup .env file for testing
